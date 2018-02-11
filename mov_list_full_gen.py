@@ -1,6 +1,7 @@
 from os import listdir, path
 import re #regex
 import sys
+import file_man
 
 def get_file(movie, file_ext, full_path = False):
     path = gen_full_path(movie)
@@ -42,14 +43,17 @@ movie_letter_dirs = listdir(movies_location)
 movie_letter_dirs.sort()
 
 for movie_letter in movie_letter_dirs:
-    #if movie_letter is 'A':
-    #    break
+    if movie_letter is 'A':
+        break
     movies = listdir(movies_location + movie_letter)
     movies.sort()
     for movie in movies:
         # FIXME: Clear line (string lenght fill with spaces? Raggarlosning)
-        print("Checking " + movie_letter + " [" + movie + "]", end='\r')
+        #print("Checking " + movie_letter + " [" + movie + "]", end='\r')
         database[movie] = { 'letter' : movie_letter, 'folder' : movie }
+        cdate = file_man.get_date(gen_full_path(database[movie]), convert=True)
+        database[movie]['created'] = cdate.replace(microsecond=0)
+        print(movie + ": " + str(database[movie]['created']))
         # Check if movie folder has nfo-file
         if get_file(database[movie], "nfo"):
             database[movie]['nfo'] = True
