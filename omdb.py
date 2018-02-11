@@ -43,7 +43,7 @@ class OMDb:
             self.json_data = self.error
             return False
 
-    def JSON(self):
+    def GetDataAsDict(self):
         if self.json_data != self.error:
             return self.json_data
         else:
