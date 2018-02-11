@@ -2,6 +2,9 @@ from os import listdir, path
 import re #regex
 import sys
 import file_man
+import omdb
+import json
+import pprint
 
 def get_file(movie, file_ext, full_path = False):
     path = gen_full_path(movie)
@@ -35,6 +38,10 @@ def nfo_to_imdb(movie):
     return imdb_id.group(0) if imdb_id else False
 
 movies_location = "M:\\"
+db_file = "db.json"
+f = open("omdb_api.txt", "r")
+omdb_api = f.readline()
+f.close()
 
 # Empty dictionary
 database = {}
@@ -43,17 +50,15 @@ movie_letter_dirs = listdir(movies_location)
 movie_letter_dirs.sort()
 
 for movie_letter in movie_letter_dirs:
-    if movie_letter is 'A':
-        break
     movies = listdir(movies_location + movie_letter)
     movies.sort()
     for movie in movies:
         # FIXME: Clear line (string lenght fill with spaces? Raggarlosning)
-        #print("Checking " + movie_letter + " [" + movie + "]", end='\r')
+        print("Checking " + movie_letter + " [" + movie + "]", end='\r')
         database[movie] = { 'letter' : movie_letter, 'folder' : movie }
+        # Get folder creation datetime
         cdate = file_man.get_date(gen_full_path(database[movie]), convert=True)
-        database[movie]['created'] = cdate.replace(microsecond=0)
-        print(movie + ": " + str(database[movie]['created']))
+        database[movie]['created'] = cdate.replace(microsecond=0).strftime("%d %b %Y")
         # Check if movie folder has nfo-file
         if get_file(database[movie], "nfo"):
             database[movie]['nfo'] = True
@@ -64,7 +69,9 @@ for movie_letter in movie_letter_dirs:
                 print("Faulty nfo for:" + movie + "!")
                 database[movie]['imdb'] = None
         else:
+            print("Missing nfo for:" + movie + "!")
             database[movie]['nfo'] = False
+            database[movie]['imdb'] = None
         # Check available srt-files
         database[movie]['subs'] = { 'sv' : check_sub(database[movie], "sv"), 'en' : check_sub(database[movie], "en") }
         # Check video filename
@@ -73,4 +80,21 @@ for movie_letter in movie_letter_dirs:
             print("Could not determine video file for " + movie + "!")
         database[movie]['video'] = vid
 
-print(database)
+# Get OMDb data
+for movie in database:
+    try:
+        if database[movie]['imdb'] is not None:
+            print("OMDb Search: " + " [" + movie + "]", end='\r')
+            omdb_search = omdb.OMDb(search_string = str(database[movie]['imdb']), api_key=omdb_api, search_type=None, search_year=None)
+            database[movie]['omdb'] = omdb_search.JSON()
+        else:
+            database[movie]['omdb'] = None
+    except:
+        print("Could not do OMDb-search for " + movie)
+
+with open(db_file, 'w') as fp:
+    json.dump(database, fp)
+
+#for movie in database:
+    #for omdb_data in database[movie]['omdb']:
+    #    print(omdb_data + ": " + str(database[movie]['omdb'][omdb_data]))
