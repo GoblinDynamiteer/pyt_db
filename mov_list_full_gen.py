@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from os import listdir, path
 import re #regex
 import sys
@@ -5,6 +6,13 @@ import file_man
 import omdb
 import json
 import pprint
+
+# Make it work for Python 2+3 and with Unicode
+import io
+try:
+    to_unicode = unicode
+except NameError:
+    to_unicode = str
 
 # Get files for movie
 def get_file(movie, file_ext, full_path = False):
@@ -34,13 +42,16 @@ def omdb_search(movie):
         omdb_search = omdb.OMDb(search_string = title, \
             api_key=omdb_api, search_type="movie", search_year=year)
     data = omdb_search.GetDataAsDict()
-    if data['Response'] == "False":
-        return None # Could not find movie
-    return omdb_search.GetDataAsDict()
+    try:
+        if data['Response'] == "False":
+            return None # Could not find movie
+        return omdb_search.GetDataAsDict()
+    except:
+        return None
 
 # Try to determine movie title from folder name
 def title_from_folder(movie, replace_dots_with=' '):
-    re_title = re.compile(".+?(?=\.(\d{4}|REPACK|720p|1080p|DVD))")
+    re_title = re.compile(".+?(?=\.(\d{4}|REPACK|720p|1080p|DVD|BluRay))")
     title = re_title.search(movie['folder'])
     if title is not None:
         title = re.sub('(REPACK|LiMiTED|EXTENDED|Unrated)', '.', title.group(0))
@@ -95,10 +106,12 @@ movie_letter_dirs = listdir(movies_location)
 movie_letter_dirs.sort()
 
 for movie_letter in movie_letter_dirs:
-    if movie_letter is 'A':
-        break
     movies = listdir(movies_location + movie_letter)
     movies.sort()
+
+    if movie_letter == 'B':
+        break
+
     for movie in movies:
         # FIXME: Clear line (string lenght fill with spaces? Raggarlosning)
         #print("Checking " + movie_letter + " [" + movie + "]", end='\r')
@@ -139,8 +152,11 @@ for movie_letter in movie_letter_dirs:
             database[movie]['imdb'] = imdb_id
             file_man.create_nfo(gen_full_path(database[movie]), imdb_id)
 
-with open(db_file, 'w') as fp:
-    json.dump(database, fp)
+with open(db_file, 'w', encoding='utf8') as outfile:
+    str_ = json.dumps(database,
+        indent=4, sort_keys=True,
+        separators=(',', ': '), ensure_ascii=False)
+    outfile.write(to_unicode(str_))
 
 #for movie in database:
     #for omdb_data in database[movie]['omdb']:
