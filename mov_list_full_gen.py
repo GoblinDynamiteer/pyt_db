@@ -6,6 +6,7 @@ import omdb
 import json
 import pprint
 
+# Get files for movie
 def get_file(movie, file_ext, full_path = False):
     path = gen_full_path(movie)
     for file in listdir(path):
@@ -13,6 +14,7 @@ def get_file(movie, file_ext, full_path = False):
             return path + str(file) if full_path else str(file)
     return None
 
+# Determine video file for movie
 def get_vid(movie):
     for ext in [ "mkv", "avi", "mp4" ]:
         vid = get_file(movie, ext)
@@ -20,33 +22,35 @@ def get_vid(movie):
             return vid
     return None
 
+# Search OMDb for movie
 def omdb_search(movie):
-    if False and movie['imdb'] is not None:
-        print("OMDb Search: " + " [" + movie['folder'] + "]", end='\r')
-        omdb_search = omdb.OMDb(search_string = str(database[movie]['imdb']), \
+    if movie['imdb'] is not None:
+        omdb_search = omdb.OMDb(search_string = str(movie['imdb']), \
             api_key=omdb_api, search_type=None, search_year=None)
     else:
         title = title_from_folder(movie, replace_dots_with='+')
         year = year_from_folder(movie)
+        print("omdb_search: title-search:" + title)
         omdb_search = omdb.OMDb(search_string = title, \
             api_key=omdb_api, search_type="movie", search_year=year)
     data = omdb_search.GetDataAsDict()
-    #print(data)
-    if data['Response'] is 'True': ## FIXME
-        print(data)
-    #return omdb_search.GetDataAsDict()
+    if data['Response'] == "False":
+        return None # Could not find movie
+    return omdb_search.GetDataAsDict()
 
+# Try to determine movie title from folder name
 def title_from_folder(movie, replace_dots_with=' '):
     re_title = re.compile(".+?(?=\.(\d{4}|REPACK|720p|1080p|DVD))")
     title = re_title.search(movie['folder'])
     if title is not None:
-        title = re.sub('(REPACK|LiMiTED|EXTENDED)', '.', title.group(0))
+        title = re.sub('(REPACK|LiMiTED|EXTENDED|Unrated)', '.', title.group(0))
         title = re.sub('\.', replace_dots_with, title)
         return title
     else:
         print("title_from_folder: Could not get title for: " + movie['folder'])
         return None
 
+# Try to determine movie year from folder name
 def year_from_folder(movie):
     re_year = re.compile("(19|20)\d{2}")
     year = re_year.search(movie['folder'])
@@ -56,15 +60,19 @@ def year_from_folder(movie):
         print("year_from_folder: Could not get year for: " + movie['folder'])
         return None
 
+# Print w/o new line
 def print_no_line(string):
     print(string, end='')
 
+# Check if movie has srt file
 def check_sub(movie, lang):
     return get_file(movie, lang + ".srt")
 
+# Generate full path to movie
 def gen_full_path(movie):
     return movies_location + movie['letter'] + "\\" + movie['folder'] + "\\"
 
+# Extract IMDb-id from nfo
 def nfo_to_imdb(movie):
     f = open(get_file(movie, "nfo", full_path = True), "r")
     imdb_url = f.readline()
@@ -73,7 +81,8 @@ def nfo_to_imdb(movie):
     imdb_id = re_imdb.search(imdb_url)
     return imdb_id.group(0) if imdb_id else False
 
-movies_location = "M:\\" # Fix for linux
+#movies_location = "M:\\" # Fix for linux
+movies_location = "C:\\Temp\MOVIE_DUMMY\\" # Dummy files
 db_file = "db.json"
 f = open("omdb_api.txt", "r")
 omdb_api = f.readline()
@@ -94,8 +103,7 @@ for movie_letter in movie_letter_dirs:
         # FIXME: Clear line (string lenght fill with spaces? Raggarlosning)
         #print("Checking " + movie_letter + " [" + movie + "]", end='\r')
         database[movie] = { 'letter' : movie_letter, 'folder' : movie }
-        omdb_search(database[movie])
-        continue
+        #continue
 
         # Get folder creation datetime
         cdate = file_man.get_date(gen_full_path(database[movie]), convert=True)
@@ -121,6 +129,15 @@ for movie_letter in movie_letter_dirs:
         if vid is None:
             print("Could not determine video file for " + movie + "!")
         database[movie]['video'] = vid
+        database[movie]['omdb'] = omdb_search(database[movie])
+
+        # Set imdb to data from omdb search, if available
+        if database[movie]['imdb'] is None and database[movie]['omdb'] is not None:
+            print("Found id from omdb-search: ")
+            imdb_id = database[movie]['omdb']["imdbID"]
+            print(imdb_id)
+            database[movie]['imdb'] = imdb_id
+            file_man.create_nfo(gen_full_path(database[movie]), imdb_id)
 
 with open(db_file, 'w') as fp:
     json.dump(database, fp)
