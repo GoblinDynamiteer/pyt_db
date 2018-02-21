@@ -1,24 +1,19 @@
 # -*- coding: utf-8 -*-
 import json
+import db_mov as movie_database
 
-#movies_location = "M:\\" # Fix for linux
-movies_location = "C:\\Temp\MOVIE_DUMMY\\" # Dummy files
-db_file = "db.json"
-f = open("omdb_api.txt", "r")
-omdb_api = f.readline()
-f.close()
+db = movie_database.database()
 
-with open(db_file, 'r') as db:
-    database = json.load(db)
+print(db.count())
+print(db.list_movies())
+print()
+print(db.search("american"))
+print()
+pie = db.search("american.pie", first_hit=True)
+print(pie[0])
+print(db.list_keys())
 
-movlist = []
-# Test output
+pie_data = db.movie_data(pie)
+pie_data_omdb = db.omdb_data(pie)
 
-for movie in database:
-    if database[movie]['subs']['sv'] is None:
-        movlist.append(database[movie])
-
-print("Missing sv.srt: ", end='')
-print(len(movlist), end='')
-print(" of ", end='')
-print(len(database))
+print(pie_data_omdb)
