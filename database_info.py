@@ -4,6 +4,10 @@ import db_mov as movie_database
 
 db = movie_database.database()
 
+if not db.load_success():
+    print("Database read error, quitting...")
+    quit()
+
 print(db.count())
 print(db.list_movies())
 print()

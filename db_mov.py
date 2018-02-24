@@ -20,8 +20,12 @@ class database:
             with open(self._db_file, 'r') as db:
                 self._loaded_db = json.load(db)
         except:
-            print("Could not open file: " + self._db_file)
+            print("Could not open file: {0}".format(self._db_file))
             self._loaded_db = None
+
+    # Check if database loaded correctly
+    def load_success(self):
+        return True if self._loaded_db is not None else False
 
     # Get count of movies
     def count(self):
@@ -42,6 +46,10 @@ class database:
                 return self._loaded_db[movie][key]
         except:
             return None
+
+    # Check if movie exists in loaded database
+    def exists(self, movie_name):
+        return True if movie_name in self._loaded_db else False
 
     # Get omdb data for movie
     def omdb_data(self, movie, key=None):
