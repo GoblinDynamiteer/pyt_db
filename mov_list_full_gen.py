@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import paths
 from os import listdir, path
 import re #regex
 import sys
