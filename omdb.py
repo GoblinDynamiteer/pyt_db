@@ -3,9 +3,17 @@ import json, urllib.request, sys, re
 
 site = "http://www.omdbapi.com"
 
-class OMDb:
+class omdb_search:
     def __init__(self, search_string, search_type, search_year, api_key):
-        self.api_key = api_key
+        self.api_key = self._load_api_key()
+        if self.api_key is None:
+            if not api_key.isempty():
+                print("Using passed API-key")
+                self.api_key = api_key
+            else:
+                print("Quitting")
+                quit();
+
         self.json_data = ""
         self.search_type = ""
         self.search_year = ""
@@ -27,10 +35,10 @@ class OMDb:
         self.search_string_url += "&plot=full"
         self._search();
 
-    def GetSearchURL(self):
+    def get_url(self):
         return self.search_string_url
 
-    def GetAPIKey(self):
+    def get_api(self):
         return self.api_key
 
     def _search(self):
@@ -38,18 +46,23 @@ class OMDb:
             response = urllib.request.urlopen(self.search_string_url, timeout = 4) \
                 .read().decode("utf-8")
             self.json_data = json.loads(response)
-            return True
         except:
-            self.json_data = self.error
-            return False
+            self.json_data = None
 
-    def GetDataAsDict(self):
-        if self.json_data != self.error:
-            return self.json_data
-        else:
-            return False
+    def _load_api_key(self, passed_key = None):
+        try:
+            f = open("omdb_api.txt", "r")
+            key = f.readline().strip('\n')
+            f.close()
+            return key
+        except:
+            print("Could not load OMDb API-key from file")
+            return None
 
-    def Type(self):
+    def data(self):
+        return self.json_data
+
+    def get_type(self):
         try:
             if self.json_data["Type"] == "series":
                 return "series"
@@ -79,10 +92,10 @@ class OMDb:
         re_year = re.compile("^[1-2]\d{3}$")
         return True if (re_year.search(string) or string != None) else False
 
-class Movie:
+class omdb_movie_data:
     def __init__(self, omdb):
         self.omdb = omdb
-        self.json = self.omdb.JSON()
+        self.json = self.omdb.get_json()
         self.title = self.json["Title"]
         self.year = self.json["Year"]
         self.imdb_id = self.json["imdbID"]
@@ -95,7 +108,7 @@ class Movie:
         self.runtime = self.json["Runtime"]
         self.country = self.json["Country"]
     def to_string(self):
-        print("Movie: " + self.title + " (" + self.year +")")
+        print("omdb_movie_data: " + self.title + " (" + self.year +")")
         print(self.country)
         print(self.imdb_id)
         print(self.genre)
@@ -103,10 +116,10 @@ class Movie:
         print("IMDb rating: " + self.imdb_rating)
         print("Actors: " + self.actors)
 
-class Show:
+class omdb_tv_data:
     def __init__(self, omdb):
         self.omdb = omdb
-        self.json = self.omdb.JSON()
+        self.json = self.omdb.get_json()
         self.title = self.json["Title"]
         self.year = re.sub('[^\x00-\x7f]','-', self.json["Year"])
         self.imdb_id = self.json["imdbID"]
@@ -122,7 +135,7 @@ class Show:
         #self.__find_episodes()
 
     def to_string(self):
-        print("Show: " + self.title + " (" + self.year +")")
+        print("omdb_tv_data: " + self.title + " (" + self.year +")")
         print(self.country)
         print(self.season_count + " seasons")
         print(self.imdb_id)
@@ -132,14 +145,14 @@ class Show:
         print("Actors: " + self.actors)
 
     def list_episodes(self):
-        if self.seasons == None:
+        if self.seasons is None:
             self.__find_episodes()
         for season in self.seasons:
             for episode in season.episodes:
                 episode.to_string()
 
     def get_episode_count(self):
-        if self.episode_count == None:
+        if self.episode_count is None:
             self.__find_episodes()
         return self.episode_count
 
@@ -147,17 +160,17 @@ class Show:
         self.seasons = []
         self.episode_count = 0
         for i in range(0, int(self.season_count)):
-            url = site + "?apikey=" + self.omdb.GetAPIKey() + "&i=" + self.imdb_id + \
+            url = site + "?apikey=" + self.omdb.get_api() + "&i=" + self.imdb_id + \
                 "&season=" + str(i+1)
             try:
                 response = urllib.request.urlopen(url, timeout = 4).read().decode("utf-8")
                 json_data = json.loads(response)
-                self.seasons.append(Season(json_data, i+1))
+                self.seasons.append(omdb_season_data(json_data, i+1))
                 self.episode_count += self.seasons[i].episode_count
             except:
                 pass
 
-class Season:
+class omdb_season_data:
     def __init__(self, json_data, season_number):
         self.episode_count = len(json_data["Episodes"])
         self.season_number = season_number
@@ -165,9 +178,9 @@ class Season:
         for i in range(0, int(self.episode_count)):
             title = json_data["Episodes"][i]["Title"]
             date = json_data["Episodes"][i]["Released"]
-            self.episodes.append(Episode(title, i+1, self.season_number, date))
+            self.episodes.append(omdb_episode_data(title, i+1, self.season_number, date))
 
-class Episode:
+class omdb_episode_data:
     def __init__(self, title, number, season_number, release_date):
         self.number = number
         self.title = title

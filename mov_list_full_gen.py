@@ -6,6 +6,10 @@ import file_man
 import omdb
 import json
 import pprint
+from pathlib import Path
+import platform
+import movie
+import os
 
 # Make it work for Python 2+3 and with Unicode
 import io
@@ -19,7 +23,7 @@ def get_file(movie, file_ext, full_path = False):
     path = gen_full_path(movie)
     for file in listdir(path):
         if file.endswith("." + file_ext):
-            return path + str(file) if full_path else str(file)
+            return os.path.join(path, str(file)) if full_path else str(file)
     return None
 
 # Determine video file for movie
@@ -32,20 +36,24 @@ def get_vid(movie):
 
 # Search OMDb for movie
 def omdb_search(movie):
+    print_no_line("Searching OMDb for [ {} ] ".format(movie['folder']))
     if movie['imdb'] is not None:
-        omdb_search = omdb.OMDb(search_string = str(movie['imdb']), \
+        print_no_line("Using IMDb-id: ")
+        omdb_search = omdb.omdb_search(search_string = str(movie['imdb']), \
             api_key=omdb_api, search_type=None, search_year=None)
     else:
+        print_no_line("Using Title : ", endl='')
         title = title_from_folder(movie, replace_dots_with='+')
         year = year_from_folder(movie)
-        print("omdb_search: title-search:" + title)
-        omdb_search = omdb.OMDb(search_string = title, \
+        omdb_search = omdb.omdb_search(search_string = title, \
             api_key=omdb_api, search_type="movie", search_year=year)
-    data = omdb_search.GetDataAsDict()
+    data = omdb_search.data()
     try:
-        if data['Response'] == "False":
-            return None # Could not find movie
-        return omdb_search.GetDataAsDict()
+        if data['Response'] is "False":
+            print("Not found!")
+            return None
+        print("Got data!")
+        return omdb_search.get_json()
     except:
         return None
 
@@ -81,7 +89,7 @@ def check_sub(movie, lang):
 
 # Generate full path to movie
 def gen_full_path(movie):
-    return movies_location + movie['letter'] + "\\" + movie['folder'] + "\\"
+    return os.path.join(movies_location, movie['letter'],  movie['folder'])
 
 # Extract IMDb-id from nfo
 def nfo_to_imdb(movie):
@@ -92,8 +100,17 @@ def nfo_to_imdb(movie):
     imdb_id = re_imdb.search(imdb_url)
     return imdb_id.group(0) if imdb_id else False
 
-#movies_location = "M:\\" # Fix for linux
-movies_location = "C:\\Temp\MOVIE_DUMMY\\" # Dummy files
+
+movies_location = ""
+if platform.system() == 'Linux':
+    movies_location = str(Path.home()) + "/smb/film"
+if platform.system() == 'Windows':
+    movies_location = "M:"
+
+if not movie.valid_movie_path(movies_location):
+    print("Could not set movies location!")
+    quit()
+
 db_file = "db.json"
 f = open("omdb_api.txt", "r")
 omdb_api = f.readline()
@@ -106,7 +123,7 @@ movie_letter_dirs = listdir(movies_location)
 movie_letter_dirs.sort()
 
 for movie_letter in movie_letter_dirs:
-    movies = listdir(movies_location + movie_letter)
+    movies = listdir(os.path.join(movies_location, movie_letter))
     movies.sort()
 
     if movie_letter == 'B':
