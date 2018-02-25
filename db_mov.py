@@ -1,14 +1,22 @@
 # -*- coding: utf-8 -*-
+import paths
 import json
+import io
+import filetools
+
+try:
+    to_unicode = unicode
+except NameError:
+    to_unicode = str
 
 class database:
     def __init__(self):
         self._db_file = "db.json"
-        self._loaded_db = []
+        self._loaded_db = None
         self._load_db()
         self._mov_list = []
         self._key_list = []
-        if self._loaded_db is not None:
+        if self._loaded_db is not None and self._loaded_db:
             for mov in self._loaded_db.keys():
                 self._mov_list.append(mov)
             for key in self._loaded_db[self._mov_list[0]].keys():
@@ -16,12 +24,32 @@ class database:
 
     # Load JSON database to variable
     def _load_db(self):
-        try:
-            with open(self._db_file, 'r') as db:
-                self._loaded_db = json.load(db)
-        except:
-            print("Could not open file: {0}".format(self._db_file))
-            self._loaded_db = None
+        if filetools.is_file_empty(self._db_file):
+            self._loaded_db = {}
+            print("Creating empty database")
+        else:
+            try:
+                with open(self._db_file, 'r') as db:
+                    self._loaded_db = json.load(db)
+            except:
+                print("Could not open file: {0}".format(self._db_file))
+                self._loaded_db = None
+
+    # Save to database JSON file
+    def save(self):
+        with open(self._db_file, 'w', encoding='utf8') as outfile:
+            str_ = json.dumps(self._loaded_db,
+                indent=4, sort_keys=True,
+                separators=(',', ': '), ensure_ascii=False)
+            outfile.write(to_unicode(str_))
+        print("Saved db!")
+
+    # Add movie to database
+    def add(self, movie):
+        if self.load_success():
+            key = movie['folder']
+            if key is not None:
+                self._loaded_db[key] = movie
 
     # Check if database loaded correctly
     def load_success(self):

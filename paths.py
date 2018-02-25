@@ -1,6 +1,7 @@
 import sys, os
 
 home = os.getenv("HOME")
-p = os.path.join(home, "code", "omdb-search")
 
-sys.path.append(p)
+for mod_path in ["db" ,"io", "omdb-search", "file"]:
+    p = os.path.join(home, "code", mod_path)
+    sys.path.append(p)
