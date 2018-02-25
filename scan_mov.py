@@ -1,52 +1,44 @@
 # -*- coding: utf-8 -*-
 import paths
-from os import listdir, path
-import re #regex
-import sys
 import filetools as ftool
-import json
-import pprint
-from pathlib import Path
-import platform
 import movie as mtool
-import os
-import datetime
 import db_mov
 
-# Make it work for Python 2+3 and with Unicode
-import io
-try:
-    to_unicode = unicode
-except NameError:
-    to_unicode = str
-
-# Print w/o new line
-def print_no_line(string):
-    print(string, end='')
+import os
+import datetime
 
 db = db_mov.database()
 if not db.load_success():
     quit()
 
-movies_location = mtool.root_path()
-mletter_dirs = listdir(movies_location)
-mletter_dirs.sort()
+mov_root = mtool.root_path()
+letters = os.listdir(mov_root)
+letters.sort()
+new_count = 0
 
-for mletter in mletter_dirs:
-    movies = listdir(os.path.join(movies_location, mletter))
+def new_movie(letter, movie):
+    fp = os.path.join(mov_root, letter, movie)
+    mov = { 'letter' : letter, 'folder' : movie }
+    date = ftool.get_creation_date(fp, convert=True)
+    mov['date_created'] = date.strftime("%d %b %Y") if date is not None else None
+    mov['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y")
+    mov['nfo'] = mtool.has_nfo(fp)
+    mov['imdb'] = mtool.nfo_to_imdb(fp)
+    mov['subs'] = {
+        'sv' : mtool.has_subtitle(fp, "sv"),
+        'en' : mtool.has_subtitle(fp, "en") }
+    mov['video'] = mtool.get_vid_file(fp)
+    mov['omdb'] = mtool.omdb_search(mov)
+    db.add(mov)
+
+for letter in letters:
+    print("Scanning {}".format(letter))
+    movies = os.listdir(os.path.join(mov_root, letter))
     movies.sort()
-
     for movie in movies:
-        fp = os.path.join(movies_location, mletter, movie)
-        mov = { 'letter' : mletter, 'folder' : movie }
-        date = ftool.get_creation_date(fp, convert=True)
-        mov['date_created'] = date.strftime("%d %b %Y") if date is not None else None
-        mov['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y")
-        mov['nfo'] = mtool.has_nfo(fp)
-        mov['imdb'] = mtool.nfo_to_imdb(fp)
-        mov['subs'] = { 'sv' : mtool.has_subtitle(fp, "sv"), 'en' : mtool.has_subtitle(fp, "en") }
-        mov['video'] = mtool.get_vid_file(fp)
-        mov['omdb'] = mtool.omdb_search(mov)
-        db.add(mov)
+        if not db.exists(movie):
+            new_movie(letter, movie)
+            new_count += 1
 
-db.save()
+print("Done scanning. Found ({}) new movies.".format(new_count))
+#db.save()
