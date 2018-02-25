@@ -3,6 +3,7 @@ import paths
 import filetools as ftool
 import movie as mtool
 import db_mov
+from printout import print_blue, print_no_line, print_color_between
 
 import os
 import datetime
@@ -29,6 +30,7 @@ def new_movie(letter, movie):
         'en' : mtool.has_subtitle(fp, "en") }
     mov['video'] = mtool.get_vid_file(fp)
     mov['omdb'] = mtool.omdb_search(mov)
+    print_color_between("Added [ {} ] to database!".format(movie), "blue")
     db.add(mov)
 
 for letter in letters:

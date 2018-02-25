@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import paths, os, platform, re, omdb
-from printout import print_warning, print_no_line, print_blue, print_success, print_error
+from printout import print_warning, print_no_line, print_blue, print_success, print_error, print_color_between
 
 _mov_letters = { '#', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', \
     'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'VW', 'X', 'Y', 'Z' }
@@ -97,9 +97,8 @@ def determine_year(folder):
 # Search OMDb for movie
 def omdb_search(movie):
     folder = movie['folder']
-    print_no_line("Searching OMDb for [ ")
-    print_blue(folder, endl=False)
-    print_no_line(" ] ")
+    print_color_between("Searching OMDb for [ {} ] ".format(folder),
+        "blue", endl=False)
     if movie['imdb'] is not None:
         print_no_line("Using IMDb-id: ")
         omdb_search = omdb.omdb_search(search_string = str(movie['imdb']), \
