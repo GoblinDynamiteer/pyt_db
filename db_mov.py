@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-import paths
-import json
-import io
-import filetools
+import paths, json, io, os, filetools
+import diskstation as ds
+from printout import print_warning
 
 try:
     to_unicode = unicode
@@ -11,7 +10,8 @@ except NameError:
 
 class database:
     def __init__(self):
-        self._db_file = "db.json"
+        self.script_path = os.path.dirname(os.path.realpath(__file__))
+        self._db_file  = os.path.join(self.script_path , "db.json")
         self._loaded_db = None
         self._load_db()
         self._mov_list = []
@@ -32,17 +32,20 @@ class database:
                 with open(self._db_file, 'r') as db:
                     self._loaded_db = json.load(db)
             except:
-                print("Could not open file: {0}".format(self._db_file))
+                print_warning("Could not open file: {0}".format(self._db_file))
                 self._loaded_db = None
 
     # Save to database JSON file
     def save(self):
-        with open(self._db_file, 'w', encoding='utf8') as outfile:
-            str_ = json.dumps(self._loaded_db,
-                indent=4, sort_keys=True,
-                separators=(',', ': '), ensure_ascii=False)
-            outfile.write(to_unicode(str_))
-        print("Saved db!")
+        if self.backup_to_ds():
+            with open(self._db_file, 'w', encoding='utf8') as outfile:
+                str_ = json.dumps(self._loaded_db,
+                    indent=4, sort_keys=True,
+                    separators=(',', ': '), ensure_ascii=False)
+                outfile.write(to_unicode(str_))
+            print("Saved databse to {}!".format(self._db_file))
+        else:
+            print_warning("save: Could not backup database file before save!")
 
     # Add movie to database
     def add(self, movie):
@@ -54,6 +57,19 @@ class database:
     # Check if database loaded correctly
     def load_success(self):
         return True if self._loaded_db is not None else False
+
+    # Update data for movie
+    def update(self, movie_folder, key, data):
+        if not self.exists(movie_folder):
+            print_warning("update: {} is not in database!".format(movie_folder))
+        else:
+            try:
+                self._loaded_db[movie_folder][key] = data
+                if key is 'omdb':
+                    data = "omdb-search"
+                print("Updated {} : {} = {}".format(movie_folder, key, data))
+            except:
+                print_warning("update: Could not update {}!".format(movie_folder))
 
     # Get count of movies
     def count(self):
@@ -78,6 +94,15 @@ class database:
     # Check if movie exists in loaded database
     def exists(self, movie_name):
         return True if movie_name in self._loaded_db else False
+
+    # Backup database file
+    def backup_to_ds(self):
+        if ds.ismounted("backup"):
+            dest = os.path.join(ds.get_mount_path("backup"), "Database", "Movie")
+            return filetools.backup_file(self._db_file, dest)
+        else:
+            print_warning("Could not backup database!")
+            return False
 
     # Get omdb data for movie
     def omdb_data(self, movie, key=None):

@@ -43,4 +43,4 @@ for letter in letters:
             new_count += 1
 
 print("Done scanning. Found ({}) new movies.".format(new_count))
-#db.save()
+db.save()
