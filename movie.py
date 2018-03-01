@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 import paths, os, platform, re, omdb
+from config import configuration_manager as cfg
 from printout import print_warning, print_no_line, print_blue, print_success, print_error, print_color_between
 
 _mov_letters = { '#', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', \
     'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'VW', 'X', 'Y', 'Z' }
+
+_config = cfg()
 
 # Check if path is a valid movie root dir
 def valid_movie_path(path):
@@ -15,11 +18,7 @@ def valid_movie_path(path):
 
 # Determine movie root path
 def root_path():
-    path = ""
-    if platform.system() == 'Linux':
-        path = str(os.getenv("HOME")) + "/smb/film"
-    if platform.system() == 'Windows':
-        path = "M:"
+    path = _config.get_setting("path", "movieroot")
     if not valid_movie_path(path):
         print("Could not find movies root location!")
         quit()
