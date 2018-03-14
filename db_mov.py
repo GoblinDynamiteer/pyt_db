@@ -100,10 +100,10 @@ class database:
 
     # Backup database file
     def backup_to_ds(self):
-        path = self._config.get_setting("path", "backup")
-        dest = os.path.join(dpath, "Database", "Movie")
+        bpath = self._config.get_setting("path", "backup")
+        dest = os.path.join(bpath, "Database", "Movie")
         return filetools.backup_file(self._db_file, dest)
-        
+
     # Get omdb data for movie
     def omdb_data(self, movie, key=None):
         omdb = self.movie_data(movie, key="omdb")
