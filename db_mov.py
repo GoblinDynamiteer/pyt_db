@@ -37,15 +37,16 @@ class database:
 
     # Save to database JSON file
     def save(self):
+        with open(self._db_file, 'w', encoding='utf8') as outfile:
+            str_ = json.dumps(self._loaded_db,
+                indent=4, sort_keys=True,
+                separators=(',', ': '), ensure_ascii=False)
+            outfile.write(to_unicode(str_))
+        print("Saved databse to {}!".format(self._db_file))
         if self.backup_to_ds():
-            with open(self._db_file, 'w', encoding='utf8') as outfile:
-                str_ = json.dumps(self._loaded_db,
-                    indent=4, sort_keys=True,
-                    separators=(',', ': '), ensure_ascii=False)
-                outfile.write(to_unicode(str_))
-            print("Saved databse to {}!".format(self._db_file))
+            print("save: Backed up database!")
         else:
-            print_warning("save: Could not backup database file before save!")
+            print_warning("save: Could not backup database!")
 
     # Add movie to database
     def add(self, movie):
