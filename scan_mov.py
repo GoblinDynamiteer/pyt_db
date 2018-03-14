@@ -42,6 +42,8 @@ for letter in letters:
         movies = os.listdir(os.path.join(mov_root, letter))
         movies.sort()
         for movie in movies:
+            if movie.startswith("@"): # Diskstation
+                continue;
             if not db.exists(movie):
                 new_movie(letter, movie)
                 new_count += 1
