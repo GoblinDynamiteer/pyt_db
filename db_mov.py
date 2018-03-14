@@ -2,6 +2,7 @@
 import paths, json, io, os, filetools
 import diskstation as ds
 from printout import print_warning
+from config import configuration_manager as cfg
 
 try:
     to_unicode = unicode
@@ -16,6 +17,7 @@ class database:
         self._load_db()
         self._mov_list = []
         self._key_list = []
+        self._config = cfg()
         if self._loaded_db is not None and self._loaded_db:
             for mov in self._loaded_db.keys():
                 self._mov_list.append(mov)
@@ -98,13 +100,10 @@ class database:
 
     # Backup database file
     def backup_to_ds(self):
-        if ds.ismounted("backup"):
-            dest = os.path.join(ds.get_mount_path("backup"), "Database", "Movie")
-            return filetools.backup_file(self._db_file, dest)
-        else:
-            print_warning("Could not backup database!")
-            return False
-
+        path = self._config.get_setting("path", "backup")
+        dest = os.path.join(dpath, "Database", "Movie")
+        return filetools.backup_file(self._db_file, dest)
+        
     # Get omdb data for movie
     def omdb_data(self, movie, key=None):
         omdb = self.movie_data(movie, key="omdb")
