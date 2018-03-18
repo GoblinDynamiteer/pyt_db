@@ -1,8 +1,23 @@
 # -*- coding: utf-8 -*-
 import paths, json, io, os, filetools
 import diskstation as ds
-from printout import print_warning
 from config import configuration_manager as cfg
+from printout import print_blue, print_no_line, print_color_between
+from printout import print_script_name as psn
+from printout import print_color_between as pcb
+from printout import print_error, print_warning
+
+def print_log(string, category=None):
+    script = os.path.basename(__file__)
+    psn(script, "", endl=False) # Print script name
+    if category == "error":
+        print_error("Error: ", endl=False)
+    if category == "warning":
+        print_warning("Warning: ", endl=False)
+    if string.find('[') >= 0 and string.find(']') > 0:
+        pcb(string, "blue")
+    else:
+        print(string)
 
 try:
     to_unicode = unicode
@@ -11,13 +26,13 @@ except NameError:
 
 class database:
     def __init__(self):
+        self._config = cfg()
         self.script_path = os.path.dirname(os.path.realpath(__file__))
-        self._db_file  = os.path.join(self.script_path , "db.json")
+        self._db_file  = self._config.get_setting("path", "movdb")
         self._loaded_db = None
         self._load_db()
         self._mov_list = []
         self._key_list = []
-        self._config = cfg()
         if self._loaded_db is not None and self._loaded_db:
             for mov in self._loaded_db.keys():
                 self._mov_list.append(mov)
@@ -28,13 +43,15 @@ class database:
     def _load_db(self):
         if filetools.is_file_empty(self._db_file):
             self._loaded_db = {}
-            print("Creating empty database")
+            print_log("creating empty database", category="warning")
         else:
             try:
                 with open(self._db_file, 'r') as db:
                     self._loaded_db = json.load(db)
+                    print_log("loaded database file: [ {} ]".format(self._db_file))
             except:
-                print_warning("Could not open file: {0}".format(self._db_file))
+                print_log("Could not open file: {0}".format(self._db_file),
+                    category="error")
                 self._loaded_db = None
 
     # Save to database JSON file
@@ -44,11 +61,11 @@ class database:
                 indent=4, sort_keys=True,
                 separators=(',', ': '), ensure_ascii=False)
             outfile.write(to_unicode(str_))
-        print("Saved databse to {}!".format(self._db_file))
+        print_log("saved database to {}!".format(self._db_file))
         if self.backup_to_ds():
-            print("save: Backed up database!")
+            print_log("backed up database!")
         else:
-            print_warning("save: Could not backup database!")
+            print_log("could not backup database!", category="warning")
 
     # Add movie to database
     def add(self, movie):
@@ -64,15 +81,17 @@ class database:
     # Update data for movie
     def update(self, movie_folder, key, data):
         if not self.exists(movie_folder):
-            print_warning("update: {} is not in database!".format(movie_folder))
+            print_log("update: {} is not in database!".format(movie_folder),
+                category="warning")
         else:
             try:
                 self._loaded_db[movie_folder][key] = data
                 if key is 'omdb':
                     data = "omdb-search"
-                print("Updated {} : {} = {}".format(movie_folder, key, data))
+                print_log("Updated {} : {} = {}".format(movie_folder, key, data))
             except:
-                print_warning("update: Could not update {}!".format(movie_folder))
+                print_log("update: Could not update {}!".format(movie_folder),
+                    category="warning")
 
     # Get count of movies
     def count(self):
