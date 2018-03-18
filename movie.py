@@ -93,6 +93,10 @@ def determine_year(folder):
         print("determine_year: Could not get year for: " + folder)
         return None
 
+def remove_extras_from_folder(folder):
+    print("here")
+    return re.sub('\.(REPACK|LiMiTED|EXTENDED|Unrated)', '', folder, flags= re.IGNORECASE)
+
 # Search OMDb for movie
 def omdb_search(movie):
     folder = movie['folder']
