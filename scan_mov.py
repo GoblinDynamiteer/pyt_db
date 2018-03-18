@@ -22,6 +22,7 @@ new_count = 0
 _valid_letters = { "#", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K",
     "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "VW", "X", "Y", "Z" }
 
+# Print with script name as prefix
 def print_log(string, category=None):
     script = os.path.basename(__file__)
     psn(script, "", endl=False) # Print script name
@@ -32,6 +33,7 @@ def print_log(string, category=None):
     else:
         print(string)
 
+# Add new movie to database
 def new_movie(letter, movie):
     fp = os.path.join(mov_root, letter, movie)
     mov = { 'letter' : letter, 'folder' : movie }
@@ -48,6 +50,7 @@ def new_movie(letter, movie):
     print_log("added [ {} ] to database!".format(movie))
     db.add(mov)
 
+# Scan for new movies...
 for letter in letters:
     if letter in _valid_letters:
         print_log("scanning {}".format(letter))
@@ -65,3 +68,4 @@ for letter in letters:
 print_log("done scanning. found ({}) new movies.".format(new_count))
 if new_count > 0:
     db.save()
+    ftool.copy_dbs_to_webserver()
