@@ -47,6 +47,7 @@ def new_movie(letter, movie):
         'en' : mtool.has_subtitle(fp, "en") }
     mov['video'] = mtool.get_vid_file(fp)
     mov['omdb'] = mtool.omdb_search(mov)
+    mov['status'] = "ok"
     print_log("added [ {} ] to database!".format(movie))
     db.add(mov)
 
