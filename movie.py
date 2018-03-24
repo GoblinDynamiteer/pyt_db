@@ -94,8 +94,10 @@ def determine_year(folder):
         return None
 
 def remove_extras_from_folder(folder):
-    print("here")
-    return re.sub('\.(REPACK|LiMiTED|EXTENDED|Unrated)', '', folder, flags= re.IGNORECASE)
+    extras = [  "repack", "limited", "extended", "unrated", "swedish",
+                "remastered", "festival", "docu", "rerip"]
+    rep_string = "\\.({})".format("|".join(extras))
+    return re.sub(rep_string, '', folder, flags=re.IGNORECASE)
 
 # Search OMDb for movie
 def omdb_search(movie):
