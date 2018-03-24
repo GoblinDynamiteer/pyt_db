@@ -85,6 +85,14 @@ def db_maintainance():
     print_log("running moviedb maintainance...")
     need_save = False
     for mov in mlist:
+        if db.movie_data(mov, 'status') == "deleted":
+            continue
+        if not db.movie_data(mov, 'status'):
+            path_to_check = os.path.join(mov_root, db.movie_data(mov, 'letter'),
+                db.movie_data(mov, 'folder'))
+            if os.path.isdir(path_to_check):
+                db.update(mov, 'status', "ok")
+                need_save = True
         if not db.movie_data(mov, 'nfo') or not db.movie_data(mov, 'imdb'):
             if try_add_nfo(mov):
                 print_log("added nfo/imdb for {}".format(mov))
