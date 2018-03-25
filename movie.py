@@ -121,14 +121,12 @@ def omdb_search(movie):
     print_log("searching OMDb for [ {} ] ".format(folder))
     if movie['imdb'] is not None:
         print_log("using IMDb-id [ {} ] ".format(movie['imdb']))
-        omdb_search = omdb.omdb_search(search_string = str(movie['imdb']),
-            search_type=None, search_year=None)
+        omdb_search = omdb.omdb_search(str(movie['imdb']))
     else:
         title = determine_title(folder , replace_dots_with='+')
         year =  determine_year(folder)
         print_log("using title [ {} ] ".format(title))
-        omdb_search = omdb.omdb_search(search_string = title,
-            search_type="movie", search_year=year)
+        omdb_search = omdb.omdb_search(title, type="movie", year=year)
     data = omdb_search.data()
     try:
         if data['Response'] == "False":
