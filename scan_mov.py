@@ -69,4 +69,4 @@ for letter in letters:
 print_log("done scanning. found ({}) new movies.".format(new_count))
 if new_count > 0:
     db.save()
-    ftool.copy_dbs_to_webserver()
+    ftool.copy_dbs_to_webserver("movie")
