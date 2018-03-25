@@ -48,14 +48,19 @@ def new_show(folder):
     show['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y")
     show['status'] = "ok"
     show['seasons'] = []
+    show['nfo'] = tvtool.has_nfo(folder)
+    show['imdb'] = tvtool.nfo_to_imdb(folder)
+    show['omdb'] = tvtool.omdb_search_show(show)
     for s in tvtool.get_season_folder_list(folder):
         season = { 'folder' : s }
+        season['omdb'] = tvtool.omdb_search_season(show, season['folder'])
         season['episodes'] = []
         show['seasons'].append(season)
         for e in tvtool.get_episodes(folder, s):
             episode = new_episode(e)
+            season['omdb'] = tvtool.omdb_search_episode(show,
+                season['folder'], episode['file'])
             season['episodes'].append(episode)
-    show['nfo'] = tvtool.has_nfo(folder)
     print_log("added [ {} ] to database!".format(folder))
     db.add(show)
 

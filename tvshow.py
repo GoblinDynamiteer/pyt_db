@@ -41,6 +41,27 @@ def has_nfo(show):
             return True
     return False
 
+# Get files for movie
+def _get_file(path, file_ext, full_path = False):
+    if not os.path.exists(path):
+        print_log("{} does not exist!".format(path), category="warning")
+        return None
+    for file in os.listdir(path):
+        if file.endswith("." + file_ext):
+            return os.path.join(path, str(file)) if full_path else str(file)
+    return None
+
+# Extract IMDb-id from nfo
+def nfo_to_imdb(show):
+    if not has_nfo(show):
+        return None
+    f = open(_get_file(_show_path(show), "nfo", full_path = True), "r")
+    imdb_url = f.readline()
+    f.close()
+    re_imdb = re.compile("tt\d{1,}")
+    imdb_id = re_imdb.search(imdb_url)
+    return imdb_id.group(0) if imdb_id else None
+
 def get_season_folder_list(show):
     list = []
     for item in os.listdir(_show_path(show)):
@@ -65,12 +86,6 @@ def _is_vid_file(file_string):
         return True
     return False
 
-def omdb_search(show):
-    folder = show['folder']
-    print_log("searching OMDb for [ {} ] ".format(folder))
-    if show['imdb'] is not None:
-        print_log("using IMDb-id [ {} ] ".format(show['imdb']))
-
 # Determine ds/tvpath from tv folder
 def guess_ds_folder(folder):
     rgx = re.compile('\.[Ss]\d{2}')
@@ -94,3 +109,44 @@ def guess_season_episode(string):
     if match:
         return match[0]
     return None
+
+def __omdb_search(query, se = None, ep = None):
+    print_log("searching omdb for {}".format(query))
+    search = omdb.omdb_search(query, season=se, episode=ep)
+    data = search.data()
+    try:
+        if data['Response'] == "False":
+            print_log("response false!", category="warning")
+            return None
+        print_log("got data!")
+        return data
+    except:
+        print_log("omdb search script error!", category="error")
+        return None
+
+def omdb_search_show(show, season = None, episode = None):
+    folder = show['folder']
+    query = None
+    if show['imdb'] is not None:
+        query = show['imdb']
+    else:
+        query = show['folder']
+    return __omdb_search(query, se=season, ep=episode)
+
+def omdb_search_season(show, season, episode=None):
+    rgx = re.compile('\d{2}$')
+    match = re.search(rgx, season)
+    if match:
+        return omdb_search_show(show, season=int(match[0]), episode=episode)
+
+def omdb_search_episode(show, season, episode):
+    rgx = re.compile('[Ss]\d{2}[Ee]\d{2}')
+    match = re.search(rgx, episode)
+    if match:
+        rgx = re.compile('[Ee]\d{2}')
+        match = re.search(rgx, match[0])
+        if match:
+            rgx = re.compile('\d{2}')
+            ep = re.search(rgx, match[0])
+            if ep:
+                return omdb_search_season(show, season=season, episode=ep[0])

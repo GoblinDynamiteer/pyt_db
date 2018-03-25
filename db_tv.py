@@ -76,7 +76,9 @@ class database:
 
     def add_ep(show, season, episode):
         if self.load_success():
-            self._loaded_db[show]['seasons'][season].append(episode)
+            for season in self._loaded_db[show]['seasons']:
+                if season['folder'] == season:
+                    season.append(episode)
 
     # Check if database loaded correctly
     def load_success(self):
