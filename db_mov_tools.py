@@ -109,7 +109,7 @@ def db_maintainance():
 
     if need_save:
         db.save()
-        ftool.copy_dbs_to_webserver()
+        ftool.copy_dbs_to_webserver("movie")
     else:
         print_log("nothing updated")
 
