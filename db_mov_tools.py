@@ -8,7 +8,7 @@ from printout import print_class as pr
 pr = pr(os.path.basename(__file__))
 db = movie_database.database()
 if not db.load_success():
-    print_log("database read error, quitting...", category="error")
+    pr.error("database read error, quitting...")
     quit()
 
 mov_root = mtool.root_path()
@@ -31,7 +31,7 @@ def try_add_nfo(mov):
     if not imdbid_omdb:
         pr.warning("no imdb omdb-data for {}".format(mov))
         return False
-    if imdbid_omdb and ftool.create_nfo(path, imdbid_omdb):
+    if imdbid_omdb and ftool.create_nfo(path, imdbid_omdb, "movie"):
         db.update(mov, 'nfo', True)
         return True
     return False

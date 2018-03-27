@@ -2,6 +2,7 @@
 import re, os, omdb
 from config import configuration_manager as cfg
 from printout import print_class as pr
+import filetools as ftool
 
 pr = pr(os.path.basename(__file__))
 _config = cfg()
@@ -11,13 +12,22 @@ def root_path():
     path = _config.get_setting("path", "tvroot")
     return path
 
+def _show_obj_to_str(obj_to_check):
+    if isinstance(obj_to_check, str):
+        return obj_to_check
+    pr.warning("converting show dict to string")
+    return obj_to_check['folder']
+
 def _show_path(show):
+    show = _show_obj_to_str(show)
     return os.path.join(root_path(), show)
 
 def _show_path_season(show, season):
+    show = _show_obj_to_str(show)
     return os.path.join(_show_path(show), season)
 
 def has_nfo(show):
+    show = _show_obj_to_str(show)
     full_path = _show_path(show)
     if not os.path.exists(full_path):
         pr.warning("path {} does not exists".format(full_path))
@@ -27,11 +37,19 @@ def has_nfo(show):
             return True
     return False
 
+def add_nfo_manual(show):
+    show = _show_obj_to_str(show)
+    path = _show_path(show)
+    pr.info("add imdb-id for [{}]: ".format(show), end_line=False)
+    imdb_input = input("")
+    re_imdb = re.compile("tt\d{1,}")
+    imdb_id = re_imdb.search(imdb_input)
+    if imdb_id:
+        id = imdb_id.group(0)
+        ftool.create_nfo(path, id, "tv")
+
 # Get files for movie
 def _get_file(path, file_ext, full_path = False):
-    if not os.path.exists(path):
-        pr.warning("{} does not exist!".format(path))
-        return None
     for file in os.listdir(path):
         if file.endswith("." + file_ext):
             return os.path.join(path, str(file)) if full_path else str(file)
@@ -39,6 +57,7 @@ def _get_file(path, file_ext, full_path = False):
 
 # Extract IMDb-id from nfo
 def nfo_to_imdb(show):
+    show = _show_obj_to_str(show)
     if not has_nfo(show):
         return None
     f = open(_get_file(_show_path(show), "nfo", full_path = True), "r")
@@ -56,6 +75,7 @@ def get_season_folder_list(show):
     return list
 
 def get_episodes(show, season_folder_name):
+    show = _show_obj_to_str(show)
     ep_list = []
     full_path = os.listdir(os.path.join(_show_path(show), season_folder_name))
     for item in full_path:
@@ -73,7 +93,8 @@ def _is_vid_file(file_string):
     return False
 
 # Determine ds/tvpath from tv folder
-def guess_ds_folder(folder):
+def guess_ds_folder(show):
+    show = _show_obj_to_str(show)
     rgx = re.compile('\.[Ss]\d{2}')
     match = re.search(rgx, folder)
     if match:

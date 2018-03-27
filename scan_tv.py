@@ -17,12 +17,14 @@ shows = os.listdir(tv_root)
 shows.sort()
 new_count = 0
 
-# Add new episode, from filename
-def new_episode(ep):
-    episode = { 'file' : ep, 'status' : "ok" }
+# Add new episode, from filename, show as dict, season/episode as strings
+def new_episode(show, season, episode):
+    episode = { 'file' : episode, 'status' : "ok" }
     episode['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y")
-    episode['se'] = tvtool.guess_season_episode(ep)
-    pr.info("Adding new episode: {} : {}".format(episode['se'], ep))
+    episode['se'] = tvtool.guess_season_episode(episode)
+    episode['omdb'] = tvtool.omdb_search_episode(show,
+        season, episode['file'])
+    pr.info("Adding new episode: {} : {}".format(episode['se'], episode))
     return episode
 
 # Add new show to database
@@ -44,9 +46,8 @@ def new_show(folder):
         season['episodes'] = []
         show['seasons'].append(season)
         for e in tvtool.get_episodes(folder, s):
-            episode = new_episode(e)
-            season['omdb'] = tvtool.omdb_search_episode(show,
-                season['folder'], episode['file'])
+            episode = new_episode(show, s, e)
+            season['omdb'] = tvtool.omdb_search_season(show, season['folder'])
             season['episodes'].append(episode)
     pr.info("added [ {} ] to database!".format(folder))
     db.add(show)
