@@ -1,24 +1,10 @@
 # -*- coding: utf-8 -*-
 import re, os, omdb
 from config import configuration_manager as cfg
-from printout import print_script_name as psn
-from printout import print_color_between as pcb
-from printout import print_error, print_success, print_warning
-from printout import print_no_line as pnl
+from printout import print_class as pr
 
+pr = pr(os.path.basename(__file__))
 _config = cfg()
-
-def print_log(string, category=None):
-    script = os.path.basename(__file__)
-    psn(script, "", endl=False) # Print script name
-    if category == "error":
-        print_error("Error: ", endl=False)
-    if category == "warning":
-        print_warning("Warning: ", endl=False)
-    if string.find('[') >= 0 and string.find(']') > 0:
-        pcb(string, "blue")
-    else:
-        print(string)
 
 # Determine tv root path
 def root_path():
@@ -34,7 +20,7 @@ def _show_path_season(show, season):
 def has_nfo(show):
     full_path = _show_path(show)
     if not os.path.exists(full_path):
-        print_log("path {} does not exists".format(full_path), category="warning")
+        pr.warning("path {} does not exists".format(full_path))
         return False
     for file in os.listdir(full_path):
         if file.endswith(".nfo"):
@@ -44,7 +30,7 @@ def has_nfo(show):
 # Get files for movie
 def _get_file(path, file_ext, full_path = False):
     if not os.path.exists(path):
-        print_log("{} does not exist!".format(path), category="warning")
+        pr.warning("{} does not exist!".format(path))
         return None
     for file in os.listdir(path):
         if file.endswith("." + file_ext):
@@ -111,17 +97,17 @@ def guess_season_episode(string):
     return None
 
 def __omdb_search(query, se = None, ep = None):
-    print_log("searching omdb for {}".format(query))
+    pr.info("searching omdb for {}".format(query))
     search = omdb.omdb_search(query, season=se, episode=ep)
     data = search.data()
     try:
         if data['Response'] == "False":
-            print_log("response false!", category="warning")
+            pr.warning("response false!")
             return None
-        print_log("got data!")
+        pr.info("got data!")
         return data
     except:
-        print_log("omdb search script error!", category="error")
+        pr.warning("omdb search script error!")
         return None
 
 def omdb_search_show(show, season = None, episode = None):

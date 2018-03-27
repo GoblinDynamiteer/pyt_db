@@ -3,13 +3,11 @@ import paths
 import filetools as ftool
 import movie as mtool
 import db_mov
-from printout import print_blue, print_no_line, print_color_between
-from printout import print_script_name as psn
-from printout import print_color_between as pcb
-from printout import print_error
 import os
 import datetime
+from printout import print_class as pr
 
+pr = pr(os.path.basename(__file__))
 db = db_mov.database()
 if not db.load_success():
     quit()
@@ -21,17 +19,6 @@ new_count = 0
 
 _valid_letters = { "#", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K",
     "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "VW", "X", "Y", "Z" }
-
-# Print with script name as prefix
-def print_log(string, category=None):
-    script = os.path.basename(__file__)
-    psn(script, "", endl=False) # Print script name
-    if category == "error":
-        print_error("Error: ", endl=False)
-    if string.find('[') >= 0 and string.find(']') > 0:
-        pcb(string, "blue")
-    else:
-        print(string)
 
 # Add new movie to database
 def new_movie(letter, movie):
@@ -48,13 +35,13 @@ def new_movie(letter, movie):
     mov['video'] = mtool.get_vid_file(fp)
     mov['omdb'] = mtool.omdb_search(mov)
     mov['status'] = "ok"
-    print_log("added [ {} ] to database!".format(movie))
+    pr.info("added [ {} ] to database!".format(movie))
     db.add(mov)
 
 # Scan for new movies...
 for letter in letters:
     if letter in _valid_letters:
-        print_log("scanning {}".format(letter))
+        pr.info("scanning {}".format(letter))
         movies = os.listdir(os.path.join(mov_root, letter))
         movies.sort()
         for movie in movies:
@@ -66,7 +53,7 @@ for letter in letters:
     else:
         continue
 
-print_log("done scanning. found ({}) new movies.".format(new_count))
+pr.info("done scanning. found ({}) new movies.".format(new_count))
 if new_count > 0:
     db.save()
     ftool.copy_dbs_to_webserver("movie")

@@ -2,22 +2,9 @@
 import paths, json, io, os, filetools
 import diskstation as ds
 from config import configuration_manager as cfg
-from printout import print_blue, print_no_line, print_color_between
-from printout import print_script_name as psn
-from printout import print_color_between as pcb
-from printout import print_error, print_warning
+from printout import print_class as pr
 
-def print_log(string, category=None):
-    script = os.path.basename(__file__)
-    psn(script, "", endl=False) # Print script name
-    if category == "error":
-        print_error("Error: ", endl=False)
-    if category == "warning":
-        print_warning("Warning: ", endl=False)
-    if string.find('[') >= 0 and string.find(']') > 0:
-        pcb(string, "blue")
-    else:
-        print(string)
+pr = pr(os.path.basename(__file__))
 
 try:
     to_unicode = unicode
@@ -43,15 +30,14 @@ class database:
     def _load_db(self):
         if filetools.is_file_empty(self._db_file):
             self._loaded_db = {}
-            print_log("creating empty database", category="warning")
+            pr.warning("creating empty database")
         else:
             try:
                 with open(self._db_file, 'r') as db:
                     self._loaded_db = json.load(db)
-                    print_log("loaded database file: [ {} ]".format(self._db_file))
+                    pr.info("loaded database file: [ {} ]".format(self._db_file))
             except:
-                print_log("Could not open file: {0}".format(self._db_file),
-                    category="error")
+                pr.error("Could not open file: {0}".format(self._db_file))
                 self._loaded_db = None
 
     # Save to database JSON file
@@ -61,11 +47,11 @@ class database:
                 indent=4, sort_keys=True,
                 separators=(',', ': '), ensure_ascii=False)
             outfile.write(to_unicode(str_))
-        print_log("saved database to {}!".format(self._db_file))
+        pr.info("saved database to {}!".format(self._db_file))
         if self.backup_to_ds():
-            print_log("backed up database!")
+            pr.info("backed up database!")
         else:
-            print_log("could not backup database!", category="warning")
+            pr.warning("could not backup database!")
 
     # Add movie to database
     def add(self, movie):
@@ -81,17 +67,15 @@ class database:
     # Update data for movie
     def update(self, movie_folder, key, data):
         if not self.exists(movie_folder):
-            print_log("update: {} is not in database!".format(movie_folder),
-                category="warning")
+            pr.warning("update: {} is not in database!".format(movie_folder))
         else:
             try:
                 self._loaded_db[movie_folder][key] = data
                 if key is 'omdb':
                     data = "omdb-search"
-                print_log("Updated {} : {} = {}".format(movie_folder, key, data))
+                pr.info("Updated {} : {} = {}".format(movie_folder, key, data))
             except:
-                print_log("update: Could not update {}!".format(movie_folder),
-                    category="warning")
+                pr.warning("update: Could not update {}!".format(movie_folder))
 
     # Get count of movies
     def count(self):
