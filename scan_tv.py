@@ -18,13 +18,12 @@ shows.sort()
 new_count = 0
 
 # Add new episode, from filename, show as dict, season/episode as strings
-def new_episode(show, season, episode):
-    episode = { 'file' : episode, 'status' : "ok" }
+def new_episode(show, season, ep_file_name):
+    episode = { 'file' : ep_file_name, 'status' : "ok" }
     episode['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y")
-    episode['se'] = tvtool.guess_season_episode(episode)
-    episode['omdb'] = tvtool.omdb_search_episode(show,
-        season, episode['file'])
-    pr.info("Adding new episode: {} : {}".format(episode['se'], episode))
+    episode['se'] = tvtool.guess_season_episode(episode['file'])
+    episode['omdb'] = tvtool.omdb_search_episode(show, season, episode['file'])
+    pr.info("Adding new episode: {} : {}".format(episode['se'], episode['file']))
     return episode
 
 # Add new show to database
