@@ -20,7 +20,11 @@ def check_nfo():
         if show.startswith("@"): # Diskstation
             continue;
         if tvtool.has_nfo(show):
-            pr.info("{} has tvshow.nfo".format(show))
+            if tvtool.nfo_to_imdb(show):
+                pr.info("{} has tvshow.nfo".format(show))
+            else:
+                pr.warning("{} has non-imdb tvshow.nfo".format(show))
+                tvtool.add_nfo_manual(show, replace=True)
         else:
             tvtool.add_nfo_manual(show)
 
