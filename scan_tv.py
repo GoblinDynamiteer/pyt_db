@@ -75,6 +75,7 @@ for show in shows:
     if not db.exists(show):
         new_show(show)
         new_show_count += 1
+        continue; # new_show() adds all new eps and seasons
     seasons = tvtool.get_season_folder_list(show)
     for season in seasons:
         episodes = tvtool.get_episodes(show, season)

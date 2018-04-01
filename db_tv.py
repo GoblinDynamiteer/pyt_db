@@ -60,7 +60,7 @@ class database:
             if key is not None:
                 self._loaded_db[key] = show
 
-    def add_ep(show, season, episode):
+    def add_ep(self, show, season, episode):
         if self.load_success():
             for season in self._loaded_db[show]['seasons']:
                 if season['folder'] == season:
