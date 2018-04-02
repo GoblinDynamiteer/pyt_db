@@ -60,11 +60,21 @@ class database:
             if key is not None:
                 self._loaded_db[key] = show
 
-    def add_ep(self, show, season, episode):
+    def add_season(self, show, season_object):
         if self.load_success():
-            for season in self._loaded_db[show]['seasons']:
-                if season['folder'] == season:
-                    season.append(episode)
+            show_obj = self._loaded_db[show]
+            show_obj['seasons'].append(season_object)
+
+    def add_ep(self, show, season, episode_object):
+        if self.load_success():
+            show_obj = self._loaded_db[show]
+            season_ix = 0
+            for season_obj in show_obj['seasons']:
+                if season_obj['folder'] == season:
+                    show_obj['seasons'][season_ix]['episodes'].append(episode_object)
+                    break
+                season_ix += 1
+            self._loaded_db[show] = show_obj
 
     # Check if database loaded correctly
     def load_success(self):
@@ -108,6 +118,12 @@ class database:
             for episode in season['episodes']:
                 if episode['file'] == ep:
                     return True
+        return False
+
+    def has_season(self, show, season):
+        for season in self._loaded_db[show]['seasons']:
+            if season['folder'] == season:
+                return True
         return False
 
     # Check if movie exists in loaded database

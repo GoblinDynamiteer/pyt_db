@@ -15,7 +15,13 @@ def root_path():
 def show_obj_to_str(obj_to_check):
     if isinstance(obj_to_check, str):
         return obj_to_check
-    pr.warning("converting show dict to string")
+    pr.warning("converting show object to string")
+    return obj_to_check['folder']
+
+def show_str_to_obj(str_to_check):
+    if not isinstance(str_to_check, str):
+        return str_to_check
+    pr.warning("converting show string to object")
     return obj_to_check['folder']
 
 def _show_path(show):
@@ -131,13 +137,13 @@ def __omdb_search(query, se = None, ep = None):
         pr.warning("omdb search script error!")
         return None
 
-def omdb_search_show(show, season = None, episode = None):
-    folder = show['folder']
+def omdb_search_show(show_object, season = None, episode = None):
+    folder = show_object['folder']
     query = None
-    if show['imdb'] is not None:
-        query = show['imdb']
+    if show_object['imdb'] is not None:
+        query = show_object['imdb']
     else:
-        query = show['folder']
+        query = show_object['folder']
     return __omdb_search(query, se=season, ep=episode)
 
 def omdb_search_season(show, season, episode=None):

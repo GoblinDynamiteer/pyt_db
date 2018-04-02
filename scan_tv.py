@@ -25,6 +25,12 @@ def new_episode(show, season, ep_file_name):
     pr.info("Adding new episode: {} : {}".format(episode['se'], episode['file']))
     return episode
 
+def new_season(show, season):
+    season = { 'folder' : season }
+    season['omdb'] = tvtool.omdb_search_season(show, season['folder'])
+    season['episodes'] = []
+    return season
+
 # Add new show to database
 def new_show(folder):
     show = { 'folder' : folder }
@@ -82,9 +88,12 @@ for show in shows:
         for ep in episodes:
             if not db.has_ep(show, season, ep):
                 new_episode_count += 1
-                sd = db.show_data(show)
-                episode = new_episode(sd, season, ep)
-                db.add_ep(show, season, episode)
+                show_object = db.show_data(show)
+                episode_object = new_episode(show_object, season, ep)
+                if not db.has_season(show, season):
+                    season_object = new_season(show_object, season)
+                    db.add_season(show, season_object)
+                db.add_ep(show, season, episode_object)
 
 pr.info("done scanning!")
 pr.info("found ({}) new shows.".format(new_show_count))
