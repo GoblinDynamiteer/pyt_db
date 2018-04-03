@@ -80,16 +80,20 @@ class database:
     def load_success(self):
         return True if self._loaded_db is not None else False
 
-    # Update data for movie
-    def update(self, show_folder, key, data):
+    # Update data for show
+    def update(self, show_folder, data, key = None):
         if not self.exists(show_folder):
             pr.warning("update: {} is not in database!".format(show_folder))
         else:
             try:
-                self._loaded_db[show_folder][key] = data
-                if key is 'omdb':
-                    data = "omdb-search"
-                pr.info("Updated {} : {} = {}".format(show_folder, key, data))
+                if key:
+                    self._loaded_db[show_folder][key] = data
+                    if key is 'omdb':
+                        data = "omdb-search"
+                    pr.info("updated {} : {} = {}".format(show_folder, key, data))
+                else:
+                    self._loaded_db[show_folder] = data
+                    pr.info("updated {} with new data!".format(show_folder, data))
             except:
                 pr.warning("update: Could not update {}!".format(show_folder))
 
@@ -97,12 +101,12 @@ class database:
     def count(self):
         return len(self._loaded_db)
 
-    # Get a list of all movie titles as strings
+    # Get a list of all show titles as strings
     def list_shows(self):
         return self._show_list
 
-    # Get movie data
-    def show_data(self, show, key=None):
+    # Get show data
+    def data(self, show, key=None):
         if isinstance(show, list):
             show = show[0]
         try:
@@ -126,7 +130,7 @@ class database:
                 return True
         return False
 
-    # Check if movie exists in loaded database
+    # Check if tv show exists in loaded database
     def exists(self, show_name):
         return True if show_name in self._loaded_db else False
 
