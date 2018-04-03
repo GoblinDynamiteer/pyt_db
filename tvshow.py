@@ -123,43 +123,48 @@ def guess_season_episode(string):
         return match[0]
     return None
 
-def __omdb_search(query, se = None, ep = None):
-    pr.info("searching omdb for {}".format(query))
-    search = omdb.omdb_search(query, season=se, episode=ep)
+def __omdb_search(show_d, season_n = None, episode_n = None):
+    folder = show_d['folder']
+    query = None
+    if show_d['imdb']:
+        query = show_d['imdb']
+    else:
+        query = show_d['folder']
+    pr.info("searching omdb for [{}] ".format(show_d['folder']), end_line=False)
+    pr.color_brackets(" as [{}] ".format(query), "green", end_line=False)
+    if season_n:
+        pr.output("-season {}".format(season_n), end_line=False)
+    if episode_n:
+        pr.output(" -episode {}".format(episode_n), end_line=False)
+    search = omdb.omdb_search(query, season=season_n, episode=episode_n)
     data = search.data()
     try:
         if data['Response'] == "False":
-            pr.warning("response false!")
+            pr.color_brackets(" [response false]!", "yellow")
             return None
-        pr.info("got data!")
+        pr.color_brackets(" [got data]!", "green")
         return data
     except:
-        pr.warning("omdb search script error!")
+        pr.color_brackets(" [script error] !", "red")
         return None
 
-def omdb_search_show(show_object, season = None, episode = None):
-    folder = show_object['folder']
-    query = None
-    if show_object['imdb'] is not None:
-        query = show_object['imdb']
-    else:
-        query = show_object['folder']
-    return __omdb_search(query, se=season, ep=episode)
+def omdb_search_show(show_d, season_n = None, episode_n = None):
+    return __omdb_search(show_d, season_n=season_n, episode_n=episode_n)
 
-def omdb_search_season(show, season, episode=None):
+def omdb_search_season(show_d, season_s, episode_n=None):
     rgx = re.compile('\d{2}$')
-    match = re.search(rgx, season)
-    if match:
-        return omdb_search_show(show, season=int(match[0]), episode=episode)
+    match_season_n = re.search(rgx, season_s)
+    if match_season_n:
+        return omdb_search_show(show_d, season_n=int(match_season_n[0]), episode_n=episode_n)
 
-def omdb_search_episode(show, season, episode):
+def omdb_search_episode(show_d, season_s, episode_s):
     rgx = re.compile('[Ss]\d{2}[Ee]\d{2}')
-    match = re.search(rgx, episode)
+    match = re.search(rgx, episode_s)
     if match:
         rgx = re.compile('[Ee]\d{2}')
         match = re.search(rgx, match[0])
         if match:
             rgx = re.compile('\d{2}')
-            ep = re.search(rgx, match[0])
-            if ep:
-                return omdb_search_season(show, season=season, episode=ep[0])
+            match_episode_n = re.search(rgx, match[0])
+            if match_episode_n:
+                return omdb_search_season(show_d, season_s=season_s, episode_n=int(match_episode_n[0]))
