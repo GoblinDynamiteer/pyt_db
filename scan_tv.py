@@ -21,8 +21,11 @@ def new_episode(show, season, ep_file_name):
     episode = { 'file' : ep_file_name, 'status' : "ok" }
     episode['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y")
     episode['se'] = tvtool.guess_season_episode(episode['file'])
+    episode['subs'] = {
+        'sv' : tvtool.has_subtitle(show, ep_file_name, "sv"),
+        'en' : tvtool.has_subtitle(show, ep_file_name, "en") }
     episode['omdb'] = tvtool.omdb_search_episode(show, season, episode['file'])
-    pr.info("Adding new episode: {} : {}".format(episode['se'], episode['file']))
+    pr.info(f"Adding new episode: {episode['se']} : {episode['file']}")
     return episode
 
 def new_season(show, season):
@@ -34,7 +37,7 @@ def new_season(show, season):
 # Add new show to database
 def new_show(folder):
     show = { 'folder' : folder }
-    pr.info("found new show [ {} ] !".format(folder))
+    pr.info(f"found new show [{folder}] !")
     fp = os.path.join(tv_root, folder)
     date = ftool.get_creation_date(fp, convert=True)
     show['date_created'] = date.strftime("%d %b %Y") if date is not None else None
@@ -45,7 +48,7 @@ def new_show(folder):
     show['imdb'] = tvtool.nfo_to_imdb(folder)
     show['omdb'] = tvtool.omdb_search_show(show)
     for s in tvtool.get_season_folder_list(folder):
-        season = { 'folder' : s }
+        season = { 'folder' : s, 'status' : "ok" }
         season['omdb'] = tvtool.omdb_search_season(show, season['folder'])
         season['episodes'] = []
         show['seasons'].append(season)
@@ -53,7 +56,7 @@ def new_show(folder):
             episode = new_episode(show, s, e)
             season['omdb'] = tvtool.omdb_search_season(show, season['folder'])
             season['episodes'].append(episode)
-    pr.info("added [ {} ] to database!".format(folder))
+    pr.info(f"added [{folder}] to database!")
     db.add(show)
 
 parser = argparse.ArgumentParser(description='tv scanner')
@@ -66,7 +69,7 @@ new_episode_count = 0
 
 try:
     max_scan = int(args.max)
-    pr.info("will scan max {} new shows".format(max_scan))
+    pr.info(f"will scan max {max_scan} new shows")
 except:
     max_scan = None
 
@@ -77,7 +80,7 @@ for show in shows:
     if max_scan and new_show_count >= max_scan:
         pr.info("max new show scan limit reached! breaking")
         break;
-    pr.info("scanning [ {} ]".format(show))
+    pr.info(f"scanning [{show}]")
     if not db.exists(show):
         new_show(show)
         new_show_count += 1
@@ -96,8 +99,8 @@ for show in shows:
                 db.add_ep(show, season, episode_object)
 
 pr.info("done scanning!")
-pr.info("found ({}) new shows.".format(new_show_count))
-pr.info("found ({}) new episodes.".format(new_episode_count))
+pr.info(f"found {new_show_count} new shows.")
+pr.info(f"found {new_episode_count} new episodes.")
 if new_show_count > 0 or new_episode_count > 0:
     db.save()
     ftool.copy_dbs_to_webserver("tv")
