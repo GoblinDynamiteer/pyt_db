@@ -117,22 +117,42 @@ class database:
         except:
             return None
 
-    def has_ep(self, show, season, ep):
-        for season in self._loaded_db[show]['seasons']:
-            for episode in season['episodes']:
-                if episode['file'] == ep:
-                    return True
+    # Determine if show has an episode
+    def has_ep(self, show_s, episode_filename):
+        if self.exists(show_s):
+            show_s = self._show_s_to_formatted_key(show_s)
+            for season in self._loaded_db[show_s]['seasons']:
+                for episode in season['episodes']:
+                    if episode['file'] == episode_filename:
+                        return True
+        else:
+            pr.error(f"has_ep: not in db: [{show_s}]")
         return False
 
-    def has_season(self, show, season):
-        for season in self._loaded_db[show]['seasons']:
-            if season['folder'] == season:
-                return True
+    # Determine if show has season
+    def has_season(self, show_s, season):
+        if self.exists(show_s):
+            show_s = self._show_s_to_formatted_key(show_s)
+            for season in self._loaded_db[show_s]['seasons']:
+                if season['folder'] == season:
+                    return True
+        else:
+            pr.error(f"has_ep: not in db: [{show_s}]")
         return False
 
     # Check if tv show exists in loaded database
     def exists(self, show_name):
-        return True if show_name in self._loaded_db else False
+        for show_s in self._show_list:
+            if show_name.lower() == show_s.lower():
+                return True
+        return False
+
+    # For file name casing mismatch
+    def _show_s_to_formatted_key(self, show_s):
+        for key in self._show_list:
+            if key.lower() == show_s.lower():
+                return key
+        return False
 
     # Backup database file
     def backup_to_ds(self):
