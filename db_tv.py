@@ -47,9 +47,9 @@ class database:
                 indent=4, sort_keys=True,
                 separators=(',', ': '), ensure_ascii=False)
             outfile.write(to_unicode(str_))
-        pr.info("saved database to {}!".format(self._db_file))
+        pr.success("saved database to {}!".format(self._db_file))
         if self.backup_to_ds():
-            pr.info("backed up database!")
+            pr.success("backed up database!")
         else:
             pr.warning("could not backup database!")
 
@@ -106,16 +106,18 @@ class database:
         return self._show_list
 
     # Get show data
-    def data(self, show, key=None):
-        if isinstance(show, list):
-            show = show[0]
-        try:
+    def data(self, show_s, key=None):
+        if isinstance(show_s, dict) and "folder" in show_s:
+            show_s = show_s["folder"]
+        if self.exists(show_s):
+            show_s = self._show_s_to_formatted_key(show_s)
             if key is None:
-                return self._loaded_db[show]
+                return self._loaded_db[show_s]
             else:
-                return self._loaded_db[show][key]
-        except:
-            return None
+                if key in self._loaded_db[show_s]:
+                    return self._loaded_db[show_s][key]
+        pr.warning(f"[data] could not retrieve data for show")
+        return None
 
     # Determine if show has an episode
     def has_ep(self, show_s, episode_filename):
