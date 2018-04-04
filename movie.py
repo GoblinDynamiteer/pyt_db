@@ -2,6 +2,7 @@
 import paths, os, platform, re, omdb
 from config import configuration_manager as cfg
 from printout import print_class as pr
+import filetools as ftool
 
 pr = pr(os.path.basename(__file__))
 _mov_letters = { '#', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', \
@@ -27,17 +28,17 @@ def root_path():
 
 # Check if movie has srt file
 def has_subtitle(path, lang):
-    return _get_file(path, lang + ".srt")
+    return ftool.get_file(path, lang + ".srt")
 
 # Check if movie has srt file
 def has_nfo(path):
-    return True if _get_file(path, "nfo") is not None else False
+    return True if ftool.get_file(path, "nfo") is not None else False
 
 # Extract IMDb-id from nfo
 def nfo_to_imdb(path):
     if not has_nfo(path):
         return None
-    f = open(_get_file(path, "nfo", full_path = True), "r")
+    f = open(ftool.get_file(path, "nfo", full_path = True), "r")
     imdb_url = f.readline()
     f.close()
     re_imdb = re.compile("tt\d{1,}")
@@ -47,19 +48,9 @@ def nfo_to_imdb(path):
 # Determine video file for movie
 def get_vid_file(path):
     for ext in [ "mkv", "avi", "mp4" ]:
-        vid = _get_file(path, ext)
+        vid = ftool.get_file(path, ext)
         if vid:
             return vid
-    return None
-
-# Get files for movie
-def _get_file(path, file_ext, full_path = False):
-    if not os.path.exists(path):
-        pr.warning("{} does not exist!".format(path))
-        return None
-    for file in os.listdir(path):
-        if file.endswith("." + file_ext):
-            return os.path.join(path, str(file)) if full_path else str(file)
     return None
 
 # Determine letter from movie folder
