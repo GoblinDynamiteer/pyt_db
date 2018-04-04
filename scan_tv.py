@@ -86,7 +86,7 @@ for show in shows:
     for season in seasons:
         episodes = tvtool.get_episodes(show, season)
         for ep in episodes:
-            if not db.has_ep(show, season, ep):
+            if not db.has_ep(show, ep):
                 new_episode_count += 1
                 show_object = db.data(show)
                 episode_object = new_episode(show_object, season, ep)
