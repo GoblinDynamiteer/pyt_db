@@ -26,9 +26,12 @@ def to_show_s(show_d_or_show_s):
 
 # Converts a show string to show dictionary, if needed
 def to_show_d(show_d_or_show_s):
-    if not isinstance(show_d_or_show_s, str):
-        return db.data(show_d_or_show_s)
-    return show_d_or_show_s # is show_d aka dict
+    if isinstance(show_d_or_show_s, dict):
+        return show_d_or_show_s
+    if isinstance(show_d_or_show_s, str):
+        if db.exists(show_d_or_show_s):
+            show_d = db.data(show_d_or_show_s)
+            return show_d # is show_d aka dict
 
 def _show_path(show):
     show_s = to_show_s(show)
@@ -101,7 +104,20 @@ def _is_vid_file(file_string):
         return True
     return False
 
-def create_new_show_from_ep(ep_s):
+# Check if episode has srt file
+def has_subtitle(show_d, ep_file_name, lang):
+    if lang != "en" and lang != "sv":
+        pr.error(f"got wrong lang for has_subtitle: {lang}")
+        return None
+    show_d = to_show_d(show_d)
+    show_folder = show_d["folder"]
+    season = guess_season(ep_file_name)
+    path = _show_path_season(show_folder, season)
+    srt_file_to_find = ep_file_name[:-3] + f"{lang}.srt"
+    return ftool.get_file(path, srt_file_to_find)
+
+# Determine full path to season folder from episode file name
+def show_season_path_from_ep_s(ep_s, create_if_missing=True):
     show_s = guess_ds_folder(ep_s)
     season_n = guess_season(ep_s)
     path = _show_path_season(show_s, season_n)
@@ -111,10 +127,13 @@ def create_new_show_from_ep(ep_s):
         pr.info(f"show path exists [{_show_path(show_s)}]")
     if not ftool.is_existing_folder(path):
         pr.warning(f"path does not exist [{path}]")
-        script_name = os.path.basename(__file__)
-        if user_input.yes_no("create path {}?".format(path), script_name=script_name):
-            os.makedirs(path)
-            return path
+        if create_if_missing:
+            script_name = os.path.basename(__file__)
+            if user_input.yes_no("create path {}?".format(path), script_name=script_name):
+                os.makedirs(path)
+                return path
+        else:
+            return None
     else:
         pr.info(f"found existing path: [{path}]")
     return path
