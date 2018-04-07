@@ -62,7 +62,7 @@ def scan_for_deleted_movies():
             need_save = True
     if need_save:
         db.save()
-        ftool.copy_dbs_to_webserver()
+        ftool.copy_dbs_to_webserver("movie")
     else:
         pr.info("nothing updated")
 
@@ -91,7 +91,15 @@ def db_maintainance():
                 need_save = True
             else:
                 pr.error("could not add omdb for {}".format(mov))
-
+        elif "Title" in data and data['Title'].startswith("#"):
+            pr.warning(f"{mov} has faulty title: [{data['Title']}]")
+            pr.info("trying omdb rescan")
+            if update_omdb_search(mov):
+                if "Title" in data and data['Title'].startswith("#"):
+                    pr.warning(f"failed, title is still [{data['Title']}]")
+                else:
+                    pr.info(f"added new omdb for {mov}")
+                need_save = True
     if need_save:
         db.save()
         ftool.copy_dbs_to_webserver("movie")
