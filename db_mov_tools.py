@@ -23,15 +23,15 @@ def try_add_nfo(mov):
     imdbid_omdb = db.omdb_data(mov,'imdbID')
     let = db.movie_data(mov,'letter')
     path = os.path.join(mov_root, let, mov)
-    if mtool.has_nfo(path): # user probabl manually added nfo
+    if mtool.has_nfo(path): # user probably manually added nfo
         imdb_id = mtool.nfo_to_imdb(path)
         db.update(mov, 'nfo', True)
         db.update(mov, 'imdb', imdb_id)
         return True
     if not imdbid_omdb:
-        pr.warning("no imdb omdb-data for {}".format(mov))
         return False
     if imdbid_omdb and ftool.create_nfo(path, imdbid_omdb, "movie"):
+        db.update(mov, 'imdb', imdbid_omdb)
         db.update(mov, 'nfo', True)
         return True
     return False
@@ -42,10 +42,6 @@ def update_omdb_search(mov):
     if omdb_data and 'Error' not in omdb_data:
         db.update(mov, 'omdb', omdb_data)
         return True
-    if omdb_data and'Error' in omdb_data:
-        pr.warning("OMDb not found: {}".format(mov))
-    if not omdb_data:
-        pr.warning("OMDb search returned None!: {}".format(mov))
     return False
 
 def scan_for_deleted_movies():
@@ -72,6 +68,7 @@ def db_maintainance():
     for mov in mlist:
         if db.movie_data(mov, 'status') == "deleted":
             continue
+        # Update movies with missing status
         if not db.movie_data(mov, 'status'):
             path_to_check = os.path.join(mov_root, db.movie_data(mov, 'letter'),
                 db.movie_data(mov, 'folder'))
@@ -80,26 +77,18 @@ def db_maintainance():
                 need_save = True
         if not db.movie_data(mov, 'nfo') or not db.movie_data(mov, 'imdb'):
             if try_add_nfo(mov):
-                pr.info("added nfo/imdb for {}".format(mov))
                 need_save = True
-            else:
-                pr.error("could not add nfo for {}".format(mov))
+        # Try to update missing omdb-data
         data = db.movie_data(mov, 'omdb')
         if not data or 'Error' in data:
             if update_omdb_search(mov):
-                pr.info("added omdb for {}".format(mov))
                 need_save = True
-            else:
-                pr.error("could not add omdb for {}".format(mov))
+        # Wrong title...
         elif "Title" in data and data['Title'].startswith("#"):
             pr.warning(f"{mov} has faulty title: [{data['Title']}]")
-            pr.info("trying omdb rescan")
             if update_omdb_search(mov):
-                if "Title" in data and data['Title'].startswith("#"):
-                    pr.warning(f"failed, title is still [{data['Title']}]")
-                else:
-                    pr.info(f"added new omdb for {mov}")
-                need_save = True
+                if "Title" in data and not data['Title'].startswith("#"):
+                    need_save = True
     if need_save:
         db.save()
         ftool.copy_dbs_to_webserver("movie")
