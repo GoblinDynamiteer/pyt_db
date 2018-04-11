@@ -119,17 +119,22 @@ def has_subtitle(show_d, ep_file_name, lang):
 # Determine full path to season folder from episode file name
 def show_season_path_from_ep_s(ep_s, create_if_missing=True):
     show_s = guess_ds_folder(ep_s)
-    season_n = guess_season(ep_s)
-    path = _show_path_season(show_s, season_n)
-    if not db.exists(show_s):
+    if show_s.lower().startswith("marvels agents of"):
+        show_s = "Marvels Agents of S.H.I.E.L.D"
+    if db.exists(show_s): # Will compare lowercase strings...
+        show_folder = db.data(show_s, "folder")
+    else:
         pr.warning(f"could not determine show for episode, guessed [{show_s}]")
-    if ftool.is_existing_folder(_show_path(show_s)):
-        pr.info(f"show path exists [{_show_path(show_s)}]")
+        show_folder = show_s
+    season_n = guess_season(ep_s)
+    path = _show_path_season(show_folder, season_n)
+    if ftool.is_existing_folder(_show_path(show_folder)):
+        pr.info(f"show path exists [{_show_path(show_folder)}]")
     if not ftool.is_existing_folder(path):
         pr.warning(f"path does not exist [{path}]")
         if create_if_missing:
             script_name = os.path.basename(__file__)
-            if user_input.yes_no("create path {}?".format(path), script_name=script_name):
+            if user_input.yes_no(f"create path {path}?", script_name=script_name):
                 os.makedirs(path)
                 return path
         else:
@@ -183,12 +188,12 @@ def __omdb_search(show_d, season_n = None, episode_n = None):
         query = show_d['imdb']
     else:
         query = show_d['folder']
-    pr.info("searching omdb for [{}] ".format(show_d['folder']), end_line=False)
-    pr.color_brackets(" as [{}] ".format(query), "green", end_line=False)
+    pr.info(f"searching omdb for [{show_d['folder']}] ", end_line=False)
+    pr.color_brackets(f"as [{query}] ", "green", end_line=False)
     if season_n:
-        pr.output("-season {}".format(season_n), end_line=False)
+        pr.output(f"-season {season_n}", end_line=False)
     if episode_n:
-        pr.output(" -episode {}".format(episode_n), end_line=False)
+        pr.output(f" -episode {episode_n}", end_line=False)
     search = omdb.omdb_search(query, season=season_n, episode=episode_n)
     data = search.data()
     try:

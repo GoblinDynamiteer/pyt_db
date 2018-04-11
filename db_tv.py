@@ -60,10 +60,11 @@ class database:
             if key is not None:
                 self._loaded_db[key] = show
 
-    def add_season(self, show, season_object):
+    def add_season(self, show_s, season_d):
         if self.load_success():
-            show_obj = self._loaded_db[show]
-            show_obj['seasons'].append(season_object)
+            show_d = self._loaded_db[show_s]
+            show_d['seasons'].append(season_d)
+            pr.info(f"added {season_d['folder']} to {show_s}")
 
     def add_ep(self, show, season, episode_object):
         if self.load_success():
@@ -132,14 +133,15 @@ class database:
         return False
 
     # Determine if show has season
-    def has_season(self, show_s, season):
+    def has_season(self, show_s, season_s):
         if self.exists(show_s):
             show_s = self._show_s_to_formatted_key(show_s)
             for season in self._loaded_db[show_s]['seasons']:
-                if season['folder'] == season:
+                se = str(season['folder'])
+                if se.lower() == season_s.lower():
                     return True
         else:
-            pr.error(f"has_ep: not in db: [{show_s}]")
+            pr.error(f"has_season: not in db: [{show_s}]")
         return False
 
     # Check if tv show exists in loaded database

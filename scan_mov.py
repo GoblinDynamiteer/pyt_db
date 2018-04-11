@@ -29,19 +29,19 @@ def new_movie(letter, movie):
     mov['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y")
     mov['nfo'] = mtool.has_nfo(fp)
     mov['imdb'] = mtool.nfo_to_imdb(fp)
+    mov['omdb'] = mtool.omdb_search(mov)
     mov['subs'] = {
         'sv' : mtool.has_subtitle(fp, "sv"),
         'en' : mtool.has_subtitle(fp, "en") }
     mov['video'] = mtool.get_vid_file(fp)
-    mov['omdb'] = mtool.omdb_search(mov)
     mov['status'] = "ok"
-    pr.info("added [ {} ] to database!".format(movie))
+    pr.info(f"added [{movie}] to database!")
     db.add(mov)
 
 # Scan for new movies...
 for letter in letters:
     if letter in _valid_letters:
-        pr.info("scanning {}".format(letter))
+        pr.info(f"scanning {letter}")
         movies = os.listdir(os.path.join(mov_root, letter))
         movies.sort()
         for movie in movies:
@@ -53,7 +53,7 @@ for letter in letters:
     else:
         continue
 
-pr.info("done scanning. found ({}) new movies.".format(new_count))
+pr.info(f"done scanning. found ({new_count}) new movies.")
 if new_count > 0:
     db.save()
     ftool.copy_dbs_to_webserver("movie")
