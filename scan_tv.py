@@ -12,8 +12,8 @@ if not db.load_success():
     quit()
 
 tv_root = tvtool.root_path()
-shows = os.listdir(tv_root)
-shows.sort()
+show_folder_list = os.listdir(tv_root)
+show_folder_list.sort()
 new_count = 0
 
 # Add new episode, from filename, show as dict, season/episode as strings
@@ -74,29 +74,30 @@ except:
     max_scan = None
 
 # Scan for new shows...
-for show in shows:
-    if show.startswith("@"): # Diskstation
+for show_s in show_folder_list:
+    if show_s.startswith("@"): # Diskstation
         continue;
     if max_scan and new_show_count >= max_scan:
         pr.info("max new show scan limit reached! breaking")
         break;
-    pr.info(f"scanning [{show}]")
-    if not db.exists(show):
-        new_show(show)
+    pr.info(f"scanning [{show_s}]")
+    if not db.exists(show_s):
+        new_show(show_s)
         new_show_count += 1
         continue; # new_show() adds all new eps and seasons
-    seasons = tvtool.get_season_folder_list(show)
-    for season in seasons:
-        episodes = tvtool.get_episodes(show, season)
-        for ep in episodes:
-            if not db.has_ep(show, ep):
+    season_folder_list = tvtool.get_season_folder_list(show_s)
+    for season_s in season_folder_list:
+        ep_file_list = tvtool.get_episodes(show_s, season_s)
+        for ep in ep_file_list:
+            if not db.has_ep(show_s, ep):
                 new_episode_count += 1
-                show_object = db.data(show)
-                episode_object = new_episode(show_object, season, ep)
-                if not db.has_season(show, season):
-                    season_object = new_season(show_object, season)
-                    db.add_season(show, season_object)
-                db.add_ep(show, season, episode_object)
+                show_d = db.data(show_s)
+                episode_d = new_episode(show_d, season_s, ep)
+                if not db.has_season(show_s, season_s):
+                    season_d = new_season(show_d, season_s)
+                    pr.info("found new season!")
+                    db.add_season(show_s, season_d)
+                db.add_ep(show_s, season_s, episode_d)
 
 pr.info("done scanning!")
 pr.info(f"found {new_show_count} new shows.")
