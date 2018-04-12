@@ -88,11 +88,11 @@ for show_s in show_folder_list:
     season_folder_list = tvtool.get_season_folder_list(show_s)
     for season_s in season_folder_list:
         ep_file_list = tvtool.get_episodes(show_s, season_s)
-        for ep in ep_file_list:
-            if not db.has_ep(show_s, ep):
+        for episode_s in ep_file_list:
+            if not db.has_ep(show_s, episode_s):
                 new_episode_count += 1
                 show_d = db.data(show_s)
-                episode_d = new_episode(show_d, season_s, ep)
+                episode_d = new_episode(show_d, season_s, episode_s)
                 if not db.has_season(show_s, season_s):
                     season_d = new_season(show_d, season_s)
                     pr.info("found new season!")
