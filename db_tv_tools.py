@@ -65,7 +65,14 @@ def omdb_update():
     save_db = False
     success_count = 0
     for show_s in db.list_shows():
+        need_update = False
         show_d = db.data(show_s)
+        nfo_imdb = tvtool.nfo_to_imdb(show_d)
+        if nfo_imdb:
+            if show_d["imdb"] != nfo_imdb:
+                show_d["imdb"] = nfo_imdb
+                need_update = True
+                pr.info(f"found new (hopefully) imdb-id [{nfo_imdb}] in nfo for {show_s}")
         if not show_d["omdb"]:
             omdb_result = tvtool.omdb_search_show(show_d)
             if omdb_result:
@@ -73,7 +80,6 @@ def omdb_update():
                 need_update = True
                 success_count += 1
         season_index = 0
-        need_update = False
         for season_d in show_d["seasons"]:
             if not season_d["omdb"]:
                 omdb_result = tvtool.omdb_search_season(show_d, season_d["folder"])
@@ -148,6 +154,12 @@ def omdb_force_update(show_s):
     success_count = 0
     pr.info("force-updating omdb-data for {}".format(show_s))
     show_d = db.data(show_s)
+    nfo_imdb = tvtool.nfo_to_imdb(show_d)
+    if nfo_imdb:
+        if show_d["imdb"] != nfo_imdb:
+            show_d["imdb"] = nfo_imdb
+            need_update = True
+            pr.info(f"found new (hopefully) imdb-id [{nfo_imdb}] in nfo for {show_s}")
     omdb_result = tvtool.omdb_search_show(show_d)
     show_d["omdb"] = omdb_result
     season_index = 0
