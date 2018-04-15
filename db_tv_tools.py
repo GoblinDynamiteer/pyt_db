@@ -15,17 +15,30 @@ tv_root = tvtool.root_path()
 shows = os.listdir(tv_root)
 shows.sort()
 
+def __flatten_eps():
+    flat_ep_list = []
+    for show_s in db.list_shows():
+        show_d = db.data(show_s)
+        season_index = 0
+        for season_d in show_d["seasons"]:
+            episode_index = 0
+            for episode_d in season_d["episodes"]:
+                episode_d["show"] = show_s
+                episode_d["season_index"] = season_index
+                episode_d["episode_index"] = episode_index
+                flat_ep_list.append(episode_d)
+                episode_index += 1
+            season_index += 1
+    return flat_ep_list
+
 def find_ep_data(key, data):
     pr.info(f"showing all eps where [{key} == {data}]")
     found = 0
-    for show_s in db.list_shows():
-        show_d = db.data(show_s)
-        for season_d in show_d["seasons"]:
-            for episode_d in season_d["episodes"]:
-                if key in episode_d:
-                    if episode_d[key] == data:
-                        pr.info(episode_d["file"])
-                        found += 1
+    eps = __flatten_eps()
+    for ep in eps:
+        if ep[key] == data:
+            pr.info(ep["file"])
+            found += 1
     pr.info(f"scan done, found [{found}] eps")
 
 def scan_for_deleted():
@@ -59,6 +72,7 @@ def scan_for_deleted():
         pr.info(f"found {deleted_count} deleted items")
     if save_db:
         db.save()
+        ftool.copy_dbs_to_webserver("tv")
 
 def check_nfo():
     for show in shows:
@@ -72,6 +86,24 @@ def check_nfo():
                 tvtool.add_nfo_manual(show, replace=True)
         else:
             tvtool.add_nfo_manual(show)
+
+def se_upper():
+    need_save = False
+    for ep in __flatten_eps():
+        if not ep["se"] or ep["status"] == "deleted":
+            continue
+        if ep["se"].startswith("s"):
+            si = ep["season_index"]
+            ei = ep["episode_index"]
+            show_d = db.data(ep["show"])
+            pr.info(f"found lowercase: {show_d['seasons'][si]['episodes'][ei]['se']}")
+            show_d["seasons"][si]["episodes"][ei]["se"] = ep["se"].upper()
+            db.update(ep["show"], show_d, key=None)
+            pr.info(f"upper: {ep['se'].upper()}")
+            need_save = True
+    if need_save:
+        db.save()
+        ftool.copy_dbs_to_webserver("tv")
 
 def omdb_update():
     pr.info("trying to omdb-search for missing data")
@@ -121,47 +153,43 @@ def omdb_update():
         pr.info("successfully updated omdb-data for {} items".format(success_count))
     if save_db:
         db.save()
+        ftool.copy_dbs_to_webserver("tv")
 
 def scan_all_subtitles():
     pr.info("scanning for subs")
     save_db = False
     new_count = 0
-    for show_s in db.list_shows():
-        show_d = db.data(show_s)
-        season_index = 0
-        need_update = False
-        for season_d in show_d["seasons"]:
-            episode_index = 0
-            for episode_d in season_d["episodes"]:
-                if episode_d["status"] == "deleted":
-                    continue
-                if not "subs" in episode_d:
-                    need_update = True
-                    episode_d['subs'] = {
-                        'sv' : tvtool.has_subtitle(show_d, episode_d["file"], "sv"),
-                        'en' : tvtool.has_subtitle(show_d, episode_d["file"], "en") }
-                    if episode_d['subs']['sv']:
-                        pr.info(f"found [{episode_d['subs']['sv']}]")
-                    if episode_d['subs']['en']:
-                        pr.info(f"found [{episode_d['subs']['en']}]")
-                else:
-                    if not episode_d['subs']['sv']:
-                        episode_d['subs']['sv'] = tvtool.has_subtitle(show_d, episode_d["file"], "sv")
-                        if episode_d['subs']['sv']:
-                            need_update = True
-                            pr.info(f"found [{episode_d['subs']['sv']}]")
-                    if not episode_d['subs']['en']:
-                        episode_d['subs']['en'] = tvtool.has_subtitle(show_d, episode_d["file"], "en")
-                        if episode_d['subs']['en']:
-                            need_update = True
-                            pr.info(f"found [{episode_d['subs']['en']}]")
-            season_index += 1
-        if need_update:
+    for ep in __flatten_eps():
+        if ep["status"] == "deleted":
+            continue
+        si = ep["season_index"]
+        ei = ep["episode_index"]
+        if not "subs" in ep:
+            show_d = db.data(ep["show"])
+            show_d["seasons"][si]["episodes"][ei]['subs'] = {'sv' : None, 'en' : None }
+            ep["subs"] = {'sv' : None, 'en' : None }
+            db.update(ep["show"], show_d, key=None)
             save_db = True
-            db.update(show_d["folder"], show_d, key=None)
+        if not ep['subs']['sv']:
+            sv_srt_file = tvtool.has_subtitle(ep["show"], ep["file"], "sv")
+            if sv_srt_file:
+                show_d = db.data(ep["show"])
+                show_d["seasons"][si]["episodes"][ei]['subs']['sv'] = sv_srt_file
+                db.update(ep["show"], show_d, key=None)
+                pr.info(f"found [{sv_srt_file}]")
+                save_db = True
+        if not ep['subs']['en']:
+            en_srt_file = tvtool.has_subtitle(ep["show"], ep["file"], "en")
+            if en_srt_file:
+                show_d = db.data(ep["show"])
+                show_d["seasons"][si]["episodes"][ei]['subs']['en'] = en_srt_file
+                db.update(ep["show"], show_d, key=None)
+                pr.info(f"found [{en_srt_file}]")
+                save_db = True
     pr.info("done!")
     if save_db:
         db.save()
+        ftool.copy_dbs_to_webserver("tv")
 
 def omdb_force_update(show_s):
     success_count = 0
@@ -189,6 +217,7 @@ def omdb_force_update(show_s):
         season_index +=1
     db.update(show_d["folder"], show_d, key=None)
     db.save()
+    ftool.copy_dbs_to_webserver("tv")
 
 parser = argparse.ArgumentParser(description='TVDb tools')
 parser.add_argument('func', type=str,
@@ -202,6 +231,8 @@ if args.func == "checknfo":
     check_nfo()
 elif args.func == "subscan":
     scan_all_subtitles()
+elif args.func == "maintain":
+    se_upper()
 elif args.func == "epdata":
     if args.key and args.data:
         find_ep_data(args.key, args.data)
