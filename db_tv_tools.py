@@ -26,6 +26,7 @@ def __flatten_eps():
                 episode_d["show"] = show_s
                 episode_d["season_index"] = season_index
                 episode_d["episode_index"] = episode_index
+                episode_d["full_path"] = os.path.join(tv_root, show_s, season_d["folder"], episode_d["file"])
                 flat_ep_list.append(episode_d)
                 episode_index += 1
             season_index += 1
@@ -40,39 +41,6 @@ def find_ep_data(key, data):
             pr.info(ep["file"])
             found += 1
     pr.info(f"scan done, found [{found}] eps")
-
-def scan_for_deleted():
-    pr.info("scanning for deleted epsisodes")
-    save_db = False
-    deleted_count = 0
-    for show_s in db.list_shows():
-        show_d = db.data(show_s)
-        season_index = 0
-        need_update = False
-        for season_d in show_d["seasons"]:
-            episode_index = 0
-            for episode_d in season_d["episodes"]:
-                if episode_d["status"] == "deleted":
-                    continue
-                file_path = os.path.join(tv_root, show_d["folder"], \
-                    season_d["folder"], episode_d["file"])
-                if not ftool.is_existing_file(file_path):
-                    pr.info(f"found deleted episode: [{episode_d['file']}]")
-                    deleted_count += 1
-                    need_update = True
-                    show_d["seasons"][season_index]["episodes"][episode_index] \
-                        ["status"] = "deleted"
-                episode_index += 1
-            season_index += 1
-        if need_update:
-            save_db = True
-            db.update(show_d["folder"], show_d, key=None)
-    pr.info("done!")
-    if deleted_count > 0:
-        pr.info(f"found {deleted_count} deleted items")
-    if save_db:
-        db.save()
-        ftool.copy_dbs_to_webserver("tv")
 
 def check_nfo():
     for show in shows:
@@ -101,6 +69,32 @@ def se_upper():
             db.update(ep["show"], show_d, key=None)
             pr.info(f"upper: {ep['se'].upper()}")
             need_save = True
+    if need_save:
+        db.save()
+        ftool.copy_dbs_to_webserver("tv")
+
+def check_status():
+    pr.info("confirming episode status flags...")
+    need_save = False
+    for ep in __flatten_eps():
+        if ep["status"] == "deleted":
+            if ftool.is_existing_file(ep['full_path']):
+                pr.warning(f"not deleted: [{ep['full_path']}]")
+                si = ep["season_index"]
+                ei = ep["episode_index"]
+                show_d = db.data(ep["show"])
+                show_d["seasons"][si]["episodes"][ei]['status'] = "ok"
+                db.update(ep["show"], db.data(ep["show"], key=None))
+                need_save = True
+        else:
+            if not ftool.is_existing_file(ep['full_path']):
+                pr.info(f"found deleted: [{ep['full_path']}]")
+                si = ep["season_index"]
+                ei = ep["episode_index"]
+                show_d = db.data(ep["show"])
+                show_d["seasons"][si]["episodes"][ei]['status'] = "deleted"
+                db.update(ep["show"], db.data(ep["show"], key=None))
+                need_save = True
     if need_save:
         db.save()
         ftool.copy_dbs_to_webserver("tv")
@@ -221,7 +215,7 @@ def omdb_force_update(show_s):
 
 parser = argparse.ArgumentParser(description='TVDb tools')
 parser.add_argument('func', type=str,
-    help='TVDb command: maintain, checkdeleted, checknfo, omdbsearch, omdbforce, subscan, epdata')
+    help='TVDb command: maintain, checknfo, omdbsearch, omdbforce, subscan, epdata')
 parser.add_argument('--show', "-s", type=str, dest="show_s", default=None, help='show to process')
 parser.add_argument('--key', "-k", type=str, dest="key", default=None, help='key')
 parser.add_argument('--data', "-d", type=str, dest="data", default=None, help='daa')
@@ -233,13 +227,12 @@ elif args.func == "subscan":
     scan_all_subtitles()
 elif args.func == "maintain":
     se_upper()
+    check_status()
 elif args.func == "epdata":
     if args.key and args.data:
         find_ep_data(args.key, args.data)
     else:
         pr.error("need to supply key and data for epdata")
-elif args.func == "checkdeleted":
-    scan_for_deleted()
 elif args.func == "omdbsearch":
     omdb_update()
 elif args.func == "omdbforce":
