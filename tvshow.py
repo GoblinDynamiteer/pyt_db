@@ -178,7 +178,7 @@ def guess_season_episode(string):
     rgx = re.compile('[Ss]\d{2}[Ee]\d{2}')
     match = re.search(rgx, string)
     if match:
-        return match[0]
+        return match[0].upper()
     return None
 
 def __omdb_search(show_d, season_n = None, episode_n = None):
