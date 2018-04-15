@@ -15,6 +15,19 @@ tv_root = tvtool.root_path()
 shows = os.listdir(tv_root)
 shows.sort()
 
+def find_ep_data(key, data):
+    pr.info(f"showing all eps where [{key} == {data}]")
+    found = 0
+    for show_s in db.list_shows():
+        show_d = db.data(show_s)
+        for season_d in show_d["seasons"]:
+            for episode_d in season_d["episodes"]:
+                if key in episode_d:
+                    if episode_d[key] == data:
+                        pr.info(episode_d["file"])
+                        found += 1
+    pr.info(f"scan done, found [{found}] eps")
+
 def scan_for_deleted():
     pr.info("scanning for deleted epsisodes")
     save_db = False
@@ -179,14 +192,21 @@ def omdb_force_update(show_s):
 
 parser = argparse.ArgumentParser(description='TVDb tools')
 parser.add_argument('func', type=str,
-    help='TVDb command: maintain, checkdeleted, checknfo, omdbsearch, omdbforce, subscan')
+    help='TVDb command: maintain, checkdeleted, checknfo, omdbsearch, omdbforce, subscan, epdata')
 parser.add_argument('--show', "-s", type=str, dest="show_s", default=None, help='show to process')
+parser.add_argument('--key', "-k", type=str, dest="key", default=None, help='key')
+parser.add_argument('--data', "-d", type=str, dest="data", default=None, help='daa')
 args = parser.parse_args()
 
 if args.func == "checknfo":
     check_nfo()
 elif args.func == "subscan":
     scan_all_subtitles()
+elif args.func == "epdata":
+    if args.key and args.data:
+        find_ep_data(args.key, args.data)
+    else:
+        pr.error("need to supply key and data for epdata")
 elif args.func == "checkdeleted":
     scan_for_deleted()
 elif args.func == "omdbsearch":
