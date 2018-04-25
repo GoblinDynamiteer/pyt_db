@@ -19,7 +19,7 @@ new_count = 0
 # Add new episode, from filename, show as dict, season/episode as strings
 def new_episode(show, season, ep_file_name):
     episode = { 'file' : ep_file_name, 'status' : "ok" }
-    episode['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y")
+    episode['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y %H:%M")
     episode['se'] = tvtool.guess_season_episode(episode['file'])
     episode['subs'] = {
         'sv' : tvtool.has_subtitle(show, ep_file_name, "sv"),
@@ -41,7 +41,7 @@ def new_show(folder):
     fp = os.path.join(tv_root, folder)
     date = ftool.get_creation_date(fp, convert=True)
     show['date_created'] = date.strftime("%d %b %Y") if date is not None else None
-    show['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y")
+    show['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y %H:%M")
     show['status'] = "ok"
     show['seasons'] = []
     show['nfo'] = tvtool.has_nfo(folder)

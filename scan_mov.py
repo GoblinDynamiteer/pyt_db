@@ -26,7 +26,7 @@ def new_movie(letter, movie):
     mov = { 'letter' : letter, 'folder' : movie }
     date = ftool.get_creation_date(fp, convert=True)
     mov['date_created'] = date.strftime("%d %b %Y") if date is not None else None
-    mov['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y")
+    mov['date_scanned'] = datetime.datetime.now().strftime("%d %b %Y %H:%M")
     mov['nfo'] = mtool.has_nfo(fp)
     mov['imdb'] = mtool.nfo_to_imdb(fp)
     mov['omdb'] = mtool.omdb_search(mov)
