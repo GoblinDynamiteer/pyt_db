@@ -149,6 +149,62 @@ def omdb_update():
         db.save()
         ftool.copy_dbs_to_webserver("tv")
 
+def tvmaze_update():
+    pr.info("trying to tvmaze-search for missing data")
+    save_db = False
+    success_count = 0
+    for show_s in db.list_shows():
+        need_update = False
+        show_d = db.data(show_s)
+        nfo_imdb = tvtool.nfo_to_imdb(show_d)
+        if nfo_imdb:
+            if show_d["imdb"] != nfo_imdb:
+                show_d["imdb"] = nfo_imdb
+                need_update = True
+                pr.info(f"found new (hopefully) imdb-id [{nfo_imdb}] in nfo for {show_s}")
+        if not "tvmaze" in show_d:
+            show_d["tvmaze"] = None
+        if not show_d["tvmaze"]:
+            tvmaze_result = tvtool.tvmaze_search_show(show_d)
+            if tvmaze_result:
+                show_d["tvmaze"] = tvmaze_result
+                need_update = True
+                success_count += 1
+        season_index = 0
+        for season_d in show_d["seasons"]:
+            if not "tvmaze" in season_d:
+                season_d["tvmaze"] = None
+            if not season_d["tvmaze"]:
+                tvmaze_result = tvtool.tvmaze_search_season(show_d, season_d["folder"])
+                if tvmaze_result:
+                    show_d["seasons"][season_index]["tvmaze"] = tvmaze_result
+                    need_update = True
+                    success_count += 1
+            episode_index = 0
+            for episode_d in season_d["episodes"]:
+                if episode_d["status"] == "deleted":
+                    continue
+                if not "tvmaze" in episode_d:
+                    episode_d["tvmaze"] = None
+                if not episode_d["tvmaze"]:
+                    tvmaze_result = tvtool.tvmaze_search_episode(
+                        show_d, season_d["folder"], episode_d["file"])
+                    if tvmaze_result:
+                        need_update = True
+                        success_count += 1
+                        show_d["seasons"][season_index]["episodes"][episode_index]["tvmaze"] = tvmaze_result
+                episode_index += 1
+            season_index +=1
+        if need_update:
+            save_db = True
+            db.update(show_d["folder"], show_d, key=None)
+    pr.info("done!")
+    if success_count > 0:
+        pr.info("successfully updated tvmaze-data for {} items".format(success_count))
+    if save_db:
+        db.save()
+        ftool.copy_dbs_to_webserver("tv")
+
 def scan_all_subtitles():
     pr.info("scanning for subs")
     save_db = False
@@ -215,7 +271,7 @@ def omdb_force_update(show_s):
 
 parser = argparse.ArgumentParser(description='TVDb tools')
 parser.add_argument('func', type=str,
-    help='TVDb command: maintain, checknfo, omdbsearch, omdbforce, subscan, epdata')
+    help='TVDb command: maintain, checknfo, omdbsearch, tvmazesearch, omdbforce, subscan, epdata')
 parser.add_argument('--show', "-s", type=str, dest="show_s", default=None, help='show to process')
 parser.add_argument('--key', "-k", type=str, dest="key", default=None, help='key')
 parser.add_argument('--data', "-d", type=str, dest="data", default=None, help='daa')
@@ -235,6 +291,8 @@ elif args.func == "epdata":
         pr.error("need to supply key and data for epdata")
 elif args.func == "omdbsearch":
     omdb_update()
+elif args.func == "tvmazesearch":
+    tvmaze_update()
 elif args.func == "omdbforce":
     if not args.show_s:
         pr.error("please supply show name with --s / -s")

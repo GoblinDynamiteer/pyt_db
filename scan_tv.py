@@ -25,12 +25,14 @@ def new_episode(show, season, ep_file_name):
         'sv' : tvtool.has_subtitle(show, ep_file_name, "sv"),
         'en' : tvtool.has_subtitle(show, ep_file_name, "en") }
     episode['omdb'] = tvtool.omdb_search_episode(show, season, episode['file'])
+    episode['tvmaze'] = tvtool.tvmaze_search_episode(show, season, episode['file'])
     pr.info(f"Adding new episode: {episode['se']} : {episode['file']}")
     return episode
 
 def new_season(show, season):
     season = { 'folder' : season }
     season['omdb'] = tvtool.omdb_search_season(show, season['folder'])
+    season['tvmaze'] = tvtool.tvmaze_search_season(show, season['folder'])
     season['episodes'] = []
     return season
 
@@ -47,14 +49,15 @@ def new_show(folder):
     show['nfo'] = tvtool.has_nfo(folder)
     show['imdb'] = tvtool.nfo_to_imdb(folder)
     show['omdb'] = tvtool.omdb_search_show(show)
+    show['tvmaze'] = tvtool.tvmaze_search_show(show)
     for s in tvtool.get_season_folder_list(folder):
         season = { 'folder' : s, 'status' : "ok" }
         season['omdb'] = tvtool.omdb_search_season(show, season['folder'])
+        season['tvmaze'] = tvtool.tvmaze_search_season(show, season['folder'])
         season['episodes'] = []
         show['seasons'].append(season)
         for e in tvtool.get_episodes(folder, s):
             episode = new_episode(show, s, e)
-            season['omdb'] = tvtool.omdb_search_season(show, season['folder'])
             season['episodes'].append(episode)
     pr.info(f"added [{folder}] to database!")
     db.add(show)

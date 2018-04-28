@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import re, os, omdb
+import re, os, omdb, tvmaze
 from config import configuration_manager as cfg
 from printout import print_class as pr
 import user_input as ui
@@ -181,6 +181,33 @@ def guess_season_episode(string):
         return match[0].upper()
     return None
 
+def __tvmaze_search(show_d, season_n = None, episode_n = None):
+    folder = show_d['folder']
+    query = None
+    if show_d['imdb']:
+        query = show_d['imdb']
+    else:
+        query = show_d['folder']
+    pr.info(f"searching tvmaze for [{show_d['folder']}] ", end_line=False)
+    pr.color_brackets(f"as [{query}] ", "green", end_line=False)
+    if season_n:
+        pr.output(f"-season {season_n}", end_line=False)
+    if episode_n:
+        pr.output(f" -episode {episode_n}", end_line=False)
+    search = tvmaze.tvmaze_search(query, season=season_n, episode=episode_n)
+    data = search.data()
+    try:
+        if "status" in data:
+            if data['status'] == "404":
+                pr.color_brackets(" [response false]!", "yellow")
+                return None
+        if "_links" in data:
+            pr.color_brackets(" [got data]!", "green")
+            return data
+    except:
+        pr.color_brackets(" [script error] !", "red")
+        return None
+
 def __omdb_search(show_d, season_n = None, episode_n = None):
     folder = show_d['folder']
     query = None
@@ -206,14 +233,24 @@ def __omdb_search(show_d, season_n = None, episode_n = None):
         pr.color_brackets(" [script error] !", "red")
         return None
 
+#TODO refactor search funcs
 def omdb_search_show(show_d, season_n = None, episode_n = None):
     return __omdb_search(show_d, season_n=season_n, episode_n=episode_n)
+
+def tvmaze_search_show(show_d, season_n = None, episode_n = None):
+    return __tvmaze_search(show_d, season_n=season_n, episode_n=episode_n)
 
 def omdb_search_season(show_d, season_s, episode_n=None):
     rgx = re.compile('\d{2}$')
     match_season_n = re.search(rgx, season_s)
     if match_season_n:
         return omdb_search_show(show_d, season_n=int(match_season_n[0]), episode_n=episode_n)
+
+def tvmaze_search_season(show_d, season_s, episode_n=None):
+    rgx = re.compile('\d{2}$')
+    match_season_n = re.search(rgx, season_s)
+    if match_season_n:
+        return tvmaze_search_show(show_d, season_n=int(match_season_n[0]), episode_n=episode_n)
 
 def omdb_search_episode(show_d, season_s, episode_s):
     rgx = re.compile('[Ss]\d{2}[Ee]\d{2}')
@@ -226,3 +263,15 @@ def omdb_search_episode(show_d, season_s, episode_s):
             match_episode_n = re.search(rgx, match[0])
             if match_episode_n:
                 return omdb_search_season(show_d, season_s=season_s, episode_n=int(match_episode_n[0]))
+
+def tvmaze_search_episode(show_d, season_s, episode_s):
+    rgx = re.compile('[Ss]\d{2}[Ee]\d{2}')
+    match = re.search(rgx, episode_s)
+    if match:
+        rgx = re.compile('[Ee]\d{2}')
+        match = re.search(rgx, match[0])
+        if match:
+            rgx = re.compile('\d{2}')
+            match_episode_n = re.search(rgx, match[0])
+            if match_episode_n:
+                return tvmaze_search_season(show_d, season_s=season_s, episode_n=int(match_episode_n[0]))
