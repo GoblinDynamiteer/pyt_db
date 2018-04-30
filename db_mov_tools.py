@@ -68,11 +68,10 @@ def db_maintainance():
     for mov in mlist:
         if db.movie_data(mov, 'status') == "deleted":
             continue
+        full_path = os.path.join(mov_root, db.movie_data(mov, 'letter'), db.movie_data(mov, 'folder'))
         # Update movies with missing status
         if not db.movie_data(mov, 'status'):
-            path_to_check = os.path.join(mov_root, db.movie_data(mov, 'letter'),
-                db.movie_data(mov, 'folder'))
-            if os.path.isdir(path_to_check):
+            if os.path.isdir(full_path):
                 db.update(mov, 'status', "ok")
                 need_save = True
         if not db.movie_data(mov, 'nfo') or not db.movie_data(mov, 'imdb'):
@@ -88,6 +87,22 @@ def db_maintainance():
             pr.warning(f"{mov} has faulty title: [{data['Title']}]")
             if update_omdb_search(mov):
                 if "Title" in data and not data['Title'].startswith("#"):
+                    need_save = True
+                elif data['Title'].startswith("#"):
+                    pr.info("omdb data still contains faulty title, using folder as title")
+                    title = mtool.determine_title(db.movie_data(mov, 'folder'))
+                    pr.info(f"guessed title: [{title}]")
+                    data['Title'] = title
+                    db.update(mov, 'omdb', data)
+                    need_save = True
+        sub_data = db.movie_data(mov, 'subs')
+        for lang in ['en', 'sv']:
+            if not sub_data[lang]:
+                sub = mtool.has_subtitle(full_path, lang)
+                if sub:
+                    pr.info(f"found [{lang}] sub for {mov}")
+                    sub_data[lang] = sub
+                    db.update(mov, 'subs', sub_data)
                     need_save = True
     if need_save:
         db.save()
