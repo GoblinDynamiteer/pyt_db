@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import re, os, omdb, tvmaze
+import paths, re, os, omdb, tvmaze
 from config import configuration_manager as cfg
 from printout import print_class as pr
 import user_input as ui
@@ -181,32 +181,43 @@ def guess_season_episode(string):
         return match[0].upper()
     return None
 
+# Special cases for omdb/tvmaze where season is listed as year
+def season_number_to_year(show_d, season_n):
+    if show_d['folder'].lower() == "mythbusters":
+        return season_n + 2002 # Mythbusters started in 2003
+    return season_n
+
 def __tvmaze_search(show_d, season_n = None, episode_n = None):
     folder = show_d['folder']
-    query = None
+    query = { "tvmaze" : None, "imdb" : None, "folder" : show_d['folder'] }
+    query_type = None
+    if "tvmaze" in show_d:
+        if show_d["tvmaze"] and "id" in show_d["tvmaze"]:
+            query["tvmaze"] = str(show_d["tvmaze"]["id"])
     if show_d['imdb']:
-        query = show_d['imdb']
-    else:
-        query = show_d['folder']
-    pr.info(f"searching tvmaze for [{show_d['folder']}] ", end_line=False)
-    pr.color_brackets(f"as [{query}] ", "green", end_line=False)
-    if season_n:
-        pr.output(f"-season {season_n}", end_line=False)
-    if episode_n:
-        pr.output(f" -episode {episode_n}", end_line=False)
-    search = tvmaze.tvmaze_search(query, season=season_n, episode=episode_n)
-    data = search.data()
-    try:
-        if "status" in data:
-            if data['status'] == "404":
-                pr.color_brackets(" [response false]!", "yellow")
-                return None
-        if "_links" in data:
-            pr.color_brackets(" [got data]!", "green")
-            return data
-    except:
-        pr.color_brackets(" [script error] !", "red")
-        return None
+            query["imdb"] = show_d['imdb']
+    for type in [ "tvmaze", "imdb", "folder" ]:
+        if not query[type]:
+            continue
+        pr.info(f"searching tvmaze for [{show_d['folder']}] ", end_line=False)
+        pr.color_brackets(f"as [{query[type]}] ", "green", end_line=False)
+        if season_n:
+            season_n = season_number_to_year(show_d, season_n) # Converts to year if required
+            pr.output(f"-season {season_n}", end_line=False)
+        if episode_n:
+            pr.output(f" -episode {episode_n}", end_line=False)
+        search = tvmaze.tvmaze_search(query[type], season=season_n, episode=episode_n)
+        data = search.data()
+        try:
+            if "status" in data:
+                if data['status'] == "404":
+                    pr.color_brackets(" [response false]!", "yellow")
+            if "_links" in data: #tvmaze data success
+                pr.color_brackets(" [got data]!", "green")
+                return data
+        except:
+            pr.color_brackets(" [script error] !", "red")
+    return None
 
 def __omdb_search(show_d, season_n = None, episode_n = None):
     folder = show_d['folder']
