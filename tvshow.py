@@ -252,19 +252,19 @@ def tvmaze_search_show(show_d, season_n = None, episode_n = None):
     return __tvmaze_search(show_d, season_n=season_n, episode_n=episode_n)
 
 def omdb_search_season(show_d, season_s, episode_n=None):
-    rgx = re.compile('\d{2}$')
+    rgx = re.compile('\d{2,4}$')
     match_season_n = re.search(rgx, season_s)
     if match_season_n:
         return omdb_search_show(show_d, season_n=int(match_season_n[0]), episode_n=episode_n)
 
 def tvmaze_search_season(show_d, season_s, episode_n=None):
-    rgx = re.compile('\d{2}$')
+    rgx = re.compile('\d{2,4}$')
     match_season_n = re.search(rgx, season_s)
     if match_season_n:
         return tvmaze_search_show(show_d, season_n=int(match_season_n[0]), episode_n=episode_n)
 
 def omdb_search_episode(show_d, season_s, episode_s):
-    rgx = re.compile('[Ss]\d{2}[Ee]\d{2}')
+    rgx = re.compile('[Ss]\d{2,4}[Ee]\d{2}')
     match = re.search(rgx, episode_s)
     if match:
         rgx = re.compile('[Ee]\d{2}')
@@ -276,7 +276,7 @@ def omdb_search_episode(show_d, season_s, episode_s):
                 return omdb_search_season(show_d, season_s=season_s, episode_n=int(match_episode_n[0]))
 
 def tvmaze_search_episode(show_d, season_s, episode_s):
-    rgx = re.compile('[Ss]\d{2}[Ee]\d{2}')
+    rgx = re.compile('[Ss]\d{2,4}[Ee]\d{2}')
     match = re.search(rgx, episode_s)
     if match:
         rgx = re.compile('[Ee]\d{2}')
