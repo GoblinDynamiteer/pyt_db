@@ -104,6 +104,9 @@ def omdb_update():
     save_db = False
     success_count = 0
     for show_s in db.list_shows():
+        if in_skip_list(show_s):
+            pr.info(f"skipping {show_s}, in skip list...")
+            continue
         need_update = False
         show_d = db.data(show_s)
         nfo_imdb = tvtool.nfo_to_imdb(show_d)
@@ -149,11 +152,22 @@ def omdb_update():
         db.save()
         ftool.copy_dbs_to_webserver("tv")
 
+def in_skip_list(tv_show_folder):
+    if tv_show_folder in [  'Breaking News med Filip & Fredrik', 'En Stark Resa',
+                            'GWs Mord', 'Hela Sverige Bakar', 'Lyxfallan',
+                            'Outsiders', 'Tunnelbanan', 'Vad Blir Det For Mat',
+                            'American Dad', 'Mythbusters', 'Sommar Med Ernst']:
+        return True
+    return False
+
 def tvmaze_update():
     pr.info("trying to tvmaze-search for missing data")
     save_db = False
     success_count = 0
     for show_s in db.list_shows():
+        if in_skip_list(show_s):
+            pr.info(f"skipping {show_s}, in skip list...")
+            continue
         need_update = False
         show_d = db.data(show_s)
         nfo_imdb = tvtool.nfo_to_imdb(show_d)
