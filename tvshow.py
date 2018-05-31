@@ -153,10 +153,10 @@ def guess_ds_folder(string):
 
 # Determine season number from tv folder
 def guess_season(string):
-    rgx = re.compile('[Ss]\d{2}')
+    rgx = re.compile('[Ss]\d{2,4}')
     match = re.search(rgx, string)
     if match:
-        rgx = re.compile('\d{2}')
+        rgx = re.compile('\d{2,4}')
         match = re.search(rgx, match[0])
         if match:
             return int(match[0])
