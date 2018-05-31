@@ -236,12 +236,12 @@ def __omdb_search(show_d, season_n = None, episode_n = None):
     data = search.data()
     try:
         if data['Response'] == "False":
-            pr.color_brackets(" [response false]!", "yellow")
+            pr.color_brackets("> [response false]!", "yellow")
             return None
-        pr.color_brackets(" [got data]!", "green")
+        pr.color_brackets("> [got data]!", "green")
         return data
     except:
-        pr.color_brackets(" [script error] !", "red")
+        pr.color_brackets("> [script error] !", "red")
         return None
 
 #TODO refactor search funcs

@@ -98,22 +98,22 @@ def remove_extras_from_folder(folder):
 # Search OMDb for movie
 def omdb_search(movie):
     folder = movie['folder']
-    pr.info("searching OMDb for [ {} ] ".format(folder))
+    pr.info(f"searching OMDb for [{folder}] ", end_line=False)
     if movie['imdb'] is not None:
-        pr.info("using IMDb-id [ {} ] ".format(movie['imdb']))
+        pr.color_brackets(f"as [{movie['imdb']}] >", "green", end_line=False)
         omdb_search = omdb.omdb_search(str(movie['imdb']))
     else:
         title = determine_title(folder , replace_dots_with='+')
         year =  determine_year(folder)
-        pr.info("using title [ {} ] ".format(title))
+        pr.color_brackets(f"as [{title}] >", "green", end_line=False)
         omdb_search = omdb.omdb_search(title, type="movie", year=year)
     data = omdb_search.data()
     try:
         if data['Response'] == "False":
-            pr.warning("response false!")
+            pr.color_brackets(" [response false]!", "yellow")
             return None
-        pr.info("got data!")
+        pr.color_brackets(" [got data]!", "green")
         return data
     except:
-        pr.warning("omdb search script error!")
+        pr.color_brackets(" [script error] !", "red")
         return None
