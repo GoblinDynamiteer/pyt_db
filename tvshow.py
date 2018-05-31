@@ -146,7 +146,7 @@ def show_season_path_from_ep_s(ep_s, create_if_missing=True):
 # Determine ds/tvpath from tv folder or filename
 def guess_ds_folder(string):
     rgx = re.compile('\.[Ss]\d{2}')
-    match = re.search(rgx, string)
+    match = re.search(rgx, string.replace(" ", "."))
     if match:
         splits = string.split(match[0])
         return splits[0].replace(".", " ")
