@@ -55,6 +55,7 @@ def get_vid_file(path):
 
 # Determine letter from movie folder
 def determine_letter(folder):
+    folder = folder.replace(" ", ".")
     let = folder[0:1]
     for prefix in ['The.', 'An.', 'A.']:
         if folder.startswith(prefix):
