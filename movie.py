@@ -89,7 +89,8 @@ def determine_year(folder):
 def remove_extras_from_folder(folder):
     extras = [  "repack", "limited", "extended", "unrated", "swedish",
                 "remastered", "festival", "docu", "rerip", "internal",
-                "finnish", "danish", "dc.remastered", "proper", "bluray"]
+                "finnish", "danish", "dc.remastered", "proper", "bluray",
+                "jpn", "hybrid"]
     rep_string = "\\.({})".format("|".join(extras))
     return re.sub(rep_string, '', folder, flags=re.IGNORECASE)
 
