@@ -43,9 +43,14 @@ def find_ep_data(key, data):
     pr.info(f"scan done, found [{found}] eps")
 
 def check_nfo():
+    global shows
+    skiplist = [ "Vad Blir Det For Mat" ]
     for show in shows:
         if show.startswith("@"): # Diskstation
             continue;
+        if show in skiplist:
+            pr.info(f"in skiplist: [{show}]")
+            continue
         if tvtool.has_nfo(show):
             if tvtool.nfo_to_imdb(show):
                 pr.info("{} has tvshow.nfo".format(show))
