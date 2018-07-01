@@ -15,8 +15,8 @@ class sql_connection:
             self.connected = True
             self.cursor = self.sql_db_conn.cursor()
 
-    def update(self, table, column, value, column_match, match_data):
-        query = f"UPDATE {table} SET {column} = %s WHERE {table}.{column_match} = %s"
+    def update(self, table, column, value, column_to_match, match_data):
+        query = f"UPDATE {table} SET {column} = %s WHERE {table}.{column_to_match} = %s"
         data = (value, match_data)
         if self.__run_query(query, data):
             self.__commit()
