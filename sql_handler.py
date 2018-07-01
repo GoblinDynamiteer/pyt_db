@@ -26,6 +26,48 @@ class sql_connection:
             pr.warning(f"failed update: {match_data} : {column} = {value}")
             return False
 
+    def insert(self, table, columns = [], data=[]):
+        if len(columns) != len(data):
+            pr.warning("columns and data doesnt match!")
+            return
+        query = f"INSERT INTO {table} ("
+        for column in columns:
+            query += f"{column},"
+        query = query[:-1] + ") VALUES ("
+        for column in columns:
+            query += r"%s,"
+        query = query[:-1] + ")"
+        result = self.__run_query(query, tuple(data))
+        if result:
+            self.__commit()
+            pr.info(f"inserted {data} into table {table}")
+            return True
+        else:
+            return False
+
+    def select(self, table, columns = [], column_to_match = None, match_data = None):
+        column_string = ""
+        if not columns:
+            column_string = "*"
+        else:
+            for column in columns:
+                column_string = f"{column_string},{column}"
+        column_string = column_string.strip(',')
+        query = f"SELECT {column_string} FROM {table} WHERE {column_to_match} = %s"
+        data = (match_data,)
+        result = self.__run_query(query, data)
+        result_list = []
+        if result:
+            self.__commit()
+            pr.info(f"selected: {columns}")
+            for column_string in self.cursor:
+                print(f"result: {str(column_string)}")
+                result_list.append(str(column_string))
+            return result
+        else:
+            pr.warning(f"failed select query")
+            return False
+
     def __run_query(self, query, data):
         try:
             self.cursor.execute(query, data)
